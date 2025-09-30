@@ -55,12 +55,7 @@ body {
     color: white;
 }
 
-#controls button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-/* --- JOYSTICK VIRTUAL --- */
+/* --- JOYSTICK VIRTUAL: APARECE EM MOBILE/TABLET, ESCONDE EM DESKTOP GRANDE --- */
 #joystick-container {
     position: absolute;
     bottom: 20px;
@@ -69,11 +64,10 @@ body {
     height: 100px;
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
-    display: flex;
+    display: flex; /* O JS controla se ele aparece ou não */
     justify-content: center;
     align-items: center;
     z-index: 10;
-    display: none; 
 }
 
 #joystick {
@@ -84,13 +78,15 @@ body {
     position: absolute;
 }
 
-@media (min-width: 15000px) {
+/* Oculta o joystick APENAS em telas de desktop (maiores que a maioria dos tablets) */
+@media (min-width: 1025px) {
     #joystick-container {
         display: none !important; 
     }
 }
 
-/* --- MODAL --- */
+
+/* --- MODAL (LOJAS) --- */
 .modal {
     display: none; 
     position: fixed; 
@@ -128,8 +124,4 @@ body {
     padding: 8px 0;
     border-bottom: 1px dashed #eee;
     font-size: 0.9em;
-}
-
-#adminButtonMap {
-    background-color: #f44336;
 }
