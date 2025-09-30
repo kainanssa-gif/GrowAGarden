@@ -26,8 +26,9 @@ const GAME_MAP = [
 ];
 
 const PETS = { none: { name: 'Nenhum', bonus: 1.0 }, bunny: { name: 'Coelho', bonus: 1.1 }, fox: { name: 'Raposa', bonus: 1.25 } };
-const EGGS = { commonEgg: { name: 'Ovo Comum', cost: 1000, pets: ['bunny'], chance: [1.0] } };
-const GEAR = { basicSprinkler: { name: 'Sprinkler Básico', cost: 500 } };
+const EGGS = { commonEgg: { name: 'Ovo Comum', cost: 1000, color: '#f0e68c', pets: ['bunny'], chance: [1.0] }, rareEgg: { name: 'Ovo Raro', cost: 5000, color: '#00ced1', pets: ['bunny', 'fox'], chance: [0.7, 0.3] } };
+const GEAR = { basicSprinkler: { name: 'Sprinkler Básico', cost: 500, description: "30% chance de regar auto" }, proSprinkler: { name: 'Sprinkler Pro', cost: 2000, description: "60% chance de regar auto" } };
+
 
 let gameData = {
     money: 100,
@@ -47,7 +48,6 @@ let gameData = {
     }
 };
 
-// Inicializa as parcelas do jardim
 for (let y = 0; y < GARDEN_HEIGHT; y++) {
     for (let x = 0; x < GARDEN_WIDTH; x++) {
         gameData.plots.push({
@@ -208,7 +208,6 @@ function drawMap() {
             ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }
-    // Desenho dos nomes e player
     drawText('JARDIM', 1 * TILE_SIZE + TILE_SIZE / 2, 8 * TILE_SIZE + 20, 'black', 12);
     drawText('SEMENTES', 1 * TILE_SIZE + TILE_SIZE / 2, 1 * TILE_SIZE + 20, 'black', 10);
     drawPlayer(gameData.player.x, gameData.player.y, gameData.player.animationFrame);
@@ -219,7 +218,6 @@ function drawGarden() {
     ctx.fillStyle = '#9c6b4d';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Desenha as parcelas e as plantas (lógica simplificada)
     gameData.plots.forEach(plot => {
         const x = plot.gridX * TILE_SIZE;
         const y = plot.gridY * TILE_SIZE;
@@ -233,7 +231,6 @@ function drawGarden() {
         }
     });
 
-    // Desenha o player no jardim
     drawPlayer(gameData.player.x, gameData.player.y, gameData.player.animationFrame);
 }
 
@@ -255,7 +252,7 @@ function changeScene(scene) {
         gameData.player.x = 1 * TILE_SIZE; 
         gameData.player.y = 8 * TILE_SIZE; 
 
-    } else { // Jardim
+    } else { 
         sceneChanger.textContent = 'Sair do Jardim';
         sceneChanger.onclick = () => {
             changeScene('map');
@@ -270,7 +267,6 @@ function changeScene(scene) {
     }
 }
 
-// CORREÇÃO: Função checkMapInteractions agora ativa todas as lojas.
 function checkMapInteractions() {
     const pX = Math.floor((gameData.player.x + PLAYER_SIZE/2) / TILE_SIZE);
     const pY = Math.floor((gameData.player.y + PLAYER_SIZE/2) / TILE_SIZE);
@@ -329,7 +325,6 @@ function updateStats() {
     petBonusSpan.textContent = `x${gameData.pet.bonus.toFixed(2)}`;
 }
 
-// NOVA FUNÇÃO: PLANTAR SEMENTE
 function plantSeed(seedType, plotIndex) {
     const seed = gameData.seeds[seedType];
     const plot = gameData.plots[plotIndex];
@@ -347,10 +342,12 @@ function plantSeed(seedType, plotIndex) {
         updateStats();
         return true;
     }
+    alert(`Erro ao plantar: Verifique se você tem dinheiro (${seed.cost}¢) e sementes (${seed.count})!`);
     return false;
 }
 
-// Funções de Renderização e Lojas (Adicionadas para que checkMapInteractions funcione)
+// --- FUNÇÕES DE LOJA (COMPLETAS) ---
+
 function renderSeedShop() {
     let html = '';
     Object.keys(gameData.seeds).forEach(key => {
@@ -364,18 +361,6 @@ function renderSeedShop() {
     });
     return html;
 }
-function renderGearShop() {
-    let html = '';
-    return html;
-}
-function renderEggShop() {
-    let html = '';
-    return html;
-}
-function openSellerModal() {
-    let html = '<p>Vendedor de Colheitas ativado!</p>';
-    openModal("Vendedor de Colheitas", html);
-}
 function buySeed(seedKey) {
     const seed = gameData.seeds[seedKey];
     if (gameData.money >= seed.cost && seed.currentStock > 0) {
@@ -387,6 +372,56 @@ function buySeed(seedKey) {
     updateStats();
 }
 
+function renderGearShop() {
+    let html = '';
+    Object.keys(GEAR).forEach(key => {
+        const gearItem = GEAR[key];
+        const disabled = gameData.money < gearItem.cost;
+        html += `<div class="shop-item">
+            <span><strong>${gearItem.name}</strong> (${gearItem.cost}¢) | Seu: ${gameData.inventory[key] || 0}<br><small>${gearItem.description}</small></span>
+            <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buyGear('${key}')">Comprar</button>
+        </div>`;
+    });
+    return html;
+}
+function buyGear(gearKey) {
+    const gearItem = GEAR[gearKey];
+    if (gameData.money >= gearItem.cost) {
+        gameData.money -= gearItem.cost;
+        gameData.inventory[gearKey] = (gameData.inventory[gearKey] || 0) + 1;
+        document.getElementById('modalContent').innerHTML = renderGearShop();
+    }
+    updateStats();
+}
+
+
+function renderEggShop() {
+    let html = '';
+    Object.keys(EGGS).forEach(key => {
+        const eggItem = EGGS[key];
+        const disabled = gameData.money < eggItem.cost;
+        html += `<div class="shop-item">
+            <span><strong>${eggItem.name}</strong> (${eggItem.cost}¢)</span>
+            <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buyAndHatchEgg('${key}')">Comprar & Chocar</button>
+        </div>`;
+    });
+    return html;
+}
+function buyAndHatchEgg(eggKey) {
+    const egg = EGGS[eggKey];
+    if (gameData.money >= egg.cost) {
+        gameData.money -= egg.cost;
+        gameData.pet = PETS[egg.pets[0]]; 
+        alert(`Parabéns! Você chocou um(a) ${gameData.pet.name}!`);
+        document.getElementById('modalContent').innerHTML = renderEggShop();
+    }
+    updateStats();
+}
+
+function openSellerModal() {
+    let html = '<p>Vendedor de Colheitas. Implemente a lógica de venda aqui!</p>';
+    openModal("Vendedor de Colheitas", html);
+}
 function openModal(title, contentHTML) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalContent').innerHTML = contentHTML;
@@ -416,7 +451,6 @@ canvas.addEventListener('click', (e) => {
     if (plotIndex !== -1 && !gameData.plots[plotIndex].isPlanted) {
         let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora, 3 - Morango):\n");
         
-        // CORREÇÃO FINAL DA LÓGICA DE PLANTIO (usando a nova função plantSeed)
         if (choice === '1') plantSeed('carrot', plotIndex);
         else if (choice === '2') plantSeed('pumpkin', plotIndex);
         else if (choice === '3') plantSeed('strawberry', plotIndex);
@@ -441,4 +475,4 @@ window.onload = function() {
     changeScene('garden'); 
     updateStats();
     gameLoop();
-            }
+             }
