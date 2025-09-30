@@ -5,7 +5,7 @@ body {
 }
 
 #game-container {
-    width: 450px;
+    width: 530px; /* Ajuste para o novo tamanho do Canvas */
     margin: 20px auto;
     border: 1px solid #ccc;
     background-color: #fff;
@@ -46,11 +46,11 @@ body {
     cursor: not-allowed;
 }
 
-/* Estilo do Modal */
+/* --- ESTILO DO MODAL UNIFICADO --- */
 .modal {
     display: none; 
     position: fixed; 
-    z-index: 1; 
+    z-index: 10; /* Z-index alto para ficar acima do mapa */
     left: 0;
     top: 0;
     width: 100%; 
@@ -61,11 +61,11 @@ body {
 
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 15% do topo e centralizado */
+    margin: 10% auto; 
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
-    max-width: 300px;
+    max-width: 400px; /* Mais largo para as opções de loja */
     border-radius: 8px;
     text-align: left;
 }
@@ -84,7 +84,7 @@ body {
     cursor: pointer;
 }
 
-.shop-item, .gear-item {
+.shop-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -92,7 +92,7 @@ body {
     border-bottom: 1px dashed #eee;
 }
 
-.shop-item:last-child, .gear-item:last-child {
+.shop-item:last-child {
     border-bottom: none;
 }
 
@@ -104,15 +104,41 @@ body {
     background-color: #cccccc !important;
 }
 
-/* Estilo do console Admin */
-#adminCodeInput, #adminCommandInput {
+/* --- ESTILO DO PAINEL ADMIN E CONTROLES --- */
+#adminButtonMap {
+    background-color: #f44336;
+    margin-top: 10px;
+}
+
+#adminPanel {
+    /* Exibe o painel em linha para não quebrar o layout */
+    display: inline-block; 
+    width: 90%;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#adminCommandInput {
     padding: 8px;
-    margin-right: 5px;
-    width: 60%;
+    width: 65%;
     box-sizing: border-box;
 }
 
 #runCommandButton {
     padding: 8px 10px !important;
     background-color: #f44336 !important;
+}
+
+/* Estilo para os botões internos de seleção de loja */
+#modalContent button {
+    margin: 5px;
+    padding: 10px;
+    background-color: #00bcd4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
