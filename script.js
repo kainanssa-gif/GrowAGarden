@@ -39,7 +39,7 @@ let gameData = {
     },
     plots: [],
     pet: PETS.none,
-    currentScene: 'garden', // FORÇANDO O INÍCIO NO JARDIM
+    currentScene: 'garden', 
     player: { 
         x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2, 
         y: CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2, 
@@ -132,11 +132,9 @@ joystickContainer.addEventListener('touchend', handleTouchEnd);
 
 function checkCollision(x, y) {
     if (gameData.currentScene === 'garden') {
-        // Colisão com as bordas do canvas no jardim
         return x < 0 || y < 0 || x + PLAYER_SIZE > CANVAS_WIDTH || y + PLAYER_SIZE > CANVAS_HEIGHT;
     }
     
-    // Lógica de Colisão do Mapa (com paredes = 1)
     const pX1 = Math.floor(x / TILE_SIZE);
     const pY1 = Math.floor(y / TILE_SIZE);
     const pX2 = Math.floor((x + PLAYER_SIZE - 1) / TILE_SIZE);
@@ -188,7 +186,6 @@ function handlePlayerMovement() {
 }
 
 function drawPlayer(x, y, frame) {
-    // Player é o cubo cinza
     ctx.fillStyle = '#606060'; 
     ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
 }
@@ -255,7 +252,6 @@ function changeScene(scene) {
         waterButton.style.display = 'none';
         adminButtonMap.style.display = 'inline-block';
         
-        // Reposiciona na saída do Jardim para o Mapa
         gameData.player.x = 1 * TILE_SIZE; 
         gameData.player.y = 8 * TILE_SIZE; 
 
@@ -264,38 +260,47 @@ function changeScene(scene) {
         sceneChanger.onclick = () => {
             changeScene('map');
         };
-        sceneChanger.style.display = 'block'; // Botão de Sair ATIVO
+        sceneChanger.style.display = 'block'; 
         harvestAllButton.style.display = 'inline-block';
         waterButton.style.display = 'inline-block';
         adminButtonMap.style.display = 'none';
 
-        // Reposiciona no centro do Jardim ao entrar
         gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
         gameData.player.y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
     }
-    // O joystick é sempre visível, mas a lógica de movimento só funciona no mapa/jardim
 }
 
+// CORREÇÃO: Função checkMapInteractions agora ativa todas as lojas.
 function checkMapInteractions() {
-    // Checa o tile que o player está
     const pX = Math.floor((gameData.player.x + PLAYER_SIZE/2) / TILE_SIZE);
     const pY = Math.floor((gameData.player.y + PLAYER_SIZE/2) / TILE_SIZE);
     const tile = GAME_MAP[pY][pX];
     
-    // Oculta o botão de interação por padrão
     sceneChanger.style.display = 'none';
 
     if (tile === 2) { 
         sceneChanger.textContent = "Entrar no Jardim";
         sceneChanger.onclick = () => changeScene('garden');
         sceneChanger.style.display = 'block';
+    } else if (tile === 3) { 
+        sceneChanger.textContent = "Vender Colheitas";
+        sceneChanger.onclick = openSellerModal;
+        sceneChanger.style.display = 'block';
     } else if (tile === 4) { 
         sceneChanger.textContent = "Loja de Sementes";
         sceneChanger.onclick = () => openModal("Loja de Sementes", renderSeedShop());
         sceneChanger.style.display = 'block';
+    } else if (tile === 5) { 
+        sceneChanger.textContent = "Loja de Equipamentos";
+        sceneChanger.onclick = () => openModal("Loja de Equipamentos", renderGearShop());
+        sceneChanger.style.display = 'block';
+    } else if (tile === 6) { 
+        sceneChanger.textContent = "Loja de Ovos (Pets)";
+        sceneChanger.onclick = () => openModal("Loja de Ovos (Pets)", renderEggShop());
+        sceneChanger.style.display = 'block';
     }
-    //... (Demais interações de loja)
 }
+
 
 // --- 5. ADMIN E FUNCIONALIDADES ---
 function executeAdminCommand(commandString) {
@@ -324,6 +329,28 @@ function updateStats() {
     petBonusSpan.textContent = `x${gameData.pet.bonus.toFixed(2)}`;
 }
 
+// NOVA FUNÇÃO: PLANTAR SEMENTE
+function plantSeed(seedType, plotIndex) {
+    const seed = gameData.seeds[seedType];
+    const plot = gameData.plots[plotIndex];
+
+    if (gameData.money >= seed.cost && seed.count > 0 && !plot.isPlanted) {
+        gameData.money -= seed.cost;
+        seed.count -= 1; 
+        
+        plot.isPlanted = true;
+        plot.seedType = seedType;
+        plot.growthStart = Date.now();
+        plot.growthStage = 0;
+        plot.isMutated = false;
+        
+        updateStats();
+        return true;
+    }
+    return false;
+}
+
+// Funções de Renderização e Lojas (Adicionadas para que checkMapInteractions funcione)
 function renderSeedShop() {
     let html = '';
     Object.keys(gameData.seeds).forEach(key => {
@@ -337,7 +364,18 @@ function renderSeedShop() {
     });
     return html;
 }
-
+function renderGearShop() {
+    let html = '';
+    return html;
+}
+function renderEggShop() {
+    let html = '';
+    return html;
+}
+function openSellerModal() {
+    let html = '<p>Vendedor de Colheitas ativado!</p>';
+    openModal("Vendedor de Colheitas", html);
+}
 function buySeed(seedKey) {
     const seed = gameData.seeds[seedKey];
     if (gameData.money >= seed.cost && seed.currentStock > 0) {
@@ -376,9 +414,13 @@ canvas.addEventListener('click', (e) => {
     const plotIndex = gameData.plots.findIndex(p => p.gridX === gridX && p.gridY === gridY);
     
     if (plotIndex !== -1 && !gameData.plots[plotIndex].isPlanted) {
-        let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora):\n");
+        let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora, 3 - Morango):\n");
+        
+        // CORREÇÃO FINAL DA LÓGICA DE PLANTIO (usando a nova função plantSeed)
         if (choice === '1') plantSeed('carrot', plotIndex);
         else if (choice === '2') plantSeed('pumpkin', plotIndex);
+        else if (choice === '3') plantSeed('strawberry', plotIndex);
+        else alert("Seleção inválida.");
     }
 });
 
@@ -394,10 +436,9 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Inicialização: Garante que todos os elementos estejam prontos antes de começar.
 window.onload = function() {
     setupJoystick();
-    changeScene('garden'); // Começa no jardim.
+    changeScene('garden'); 
     updateStats();
     gameLoop();
             }
