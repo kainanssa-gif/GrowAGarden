@@ -3,51 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Grow a Garden 2D</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>Grow A Garden</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div id="game-container">
-        <h2>Grow a Garden 2D</h2>
-        
-        <div id="stats">
-            <p>Dinheiro: <span id="money">100</span> Sheckles</p>
-            <p>Itens: <span id="sprinklerCount">0</span> Sprinklers</p>
-            <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.0</span>)</p>
-        </div>
-        
         <canvas id="gardenCanvas" width="400" height="400"></canvas>
 
+        <div id="controls">
+            <button id="sceneChanger" style="display: none;">Entrar no Jardim</button>
+            <button id="waterButton" style="display: none;">Regar</button>
+            <button id="harvestAllButton" style="display: none;">Colher Tudo</button>
+            <button id="adminButtonMap">Admin</button> 
+        </div>
+
+        <div id="stats">
+            <p>Dinheiro: <span id="money">100.00</span> ¢</p>
+            <p>Equipamentos: <span id="sprinklerCount">0</span> (Sprinklers + Regador)</p>
+            <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.00</span>)</p>
+        </div>
+        
         <div id="joystick-container">
             <div id="joystick"></div>
         </div>
-        
-        <div id="controls">
-            <button id="sceneChanger"></button>
-            <button id="waterButton" style="display: none;">Regar (Sprinkler)</button>
-            <button id="harvestAllButton" style="display: none;">Colher Todas</button>
-            <button id="adminButtonMap" style="background-color: #f44336;">Admin</button>
-        </div>
-        
-        <div id="shopInteractionModal" class="modal">
-            <div class="modal-content">
-                <span id="closeModalButton" class="close-button">&times;</span>
-                <h3 id="modalTitle">Título do Modal</h3>
-                <div id="modalContent"></div>
-            </div>
-        </div>
-        
-        <div id="adminPanel" style="display: none; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
-            <h4>Console Admin</h4>
-            <input type="text" id="adminCommandInput" placeholder="Digite /comando valor">
-            <button id="runCommandButton">Executar</button>
-            <p id="adminOutput" style="font-size: 0.8em; color: green;"></p>
+    </div>
+
+    <div id="shopInteractionModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Loja</h2>
+            <div id="modalContent">
+                </div>
+            <button id="closeModalButton">Fechar</button>
         </div>
     </div>
-    
+
+    <div id="adminPanel" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Painel Admin</h2>
+            <input type="text" id="adminCommandInput" placeholder="/give money 1000">
+            <button id="runCommandButton">Executar</button>
+            <p id="adminOutput"></p>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
