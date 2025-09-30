@@ -55,9 +55,10 @@ body {
     color: white;
 }
 
+/* --- SOLUÇÃO FINAL DO JOYSTICK: AGORA MAIS ACIMA NO CANTO INFERIOR ESQUERDO --- */
 #joystick-container {
-    position: fixed;
-    bottom: 20px; 
+    position: fixed; /* Fixado na tela, não no container do jogo */
+    bottom: 50px;    /* MAIS ALTO */
     left: 20px;    
     width: 100px;
     height: 100px;
@@ -77,6 +78,7 @@ body {
     position: absolute;
 }
 
+/* Oculta o joystick APENAS em telas de desktop */
 @media (min-width: 1025px) {
     #joystick-container {
         display: none !important; 
@@ -84,6 +86,7 @@ body {
 }
 
 
+/* --- MODAL (LOJAS) --- */
 .modal {
     display: none; 
     position: fixed; 
