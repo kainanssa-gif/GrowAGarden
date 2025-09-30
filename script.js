@@ -1,3 +1,4 @@
+// --- 1. CONFIGURAÇÕES E DADOS GLOBAIS ---
 const canvas = document.getElementById('gardenCanvas');
 const ctx = canvas.getContext('2d');
 const TILE_SIZE = 40;
@@ -10,6 +11,10 @@ const PLAYER_SIZE = 25;
 const GARDEN_WIDTH = 4;
 const GARDEN_HEIGHT = 4;
 
+// SENHA DE ADMIN
+const ADMIN_PASSWORD = "ArthurSigmaBoy123"; 
+
+// Mapa 10x10 (1:Parede, 2:Entrada Jardim, 3:Vendedor, 4:Loja Semente, 5:Loja Gear, 6:Loja Ovos, 0:Grama)
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 5, 6, 0, 0, 0, 0, 0, 1], 
@@ -32,6 +37,7 @@ let gameData = {
     money: 100,
     inventory: { basicSprinkler: 0, proSprinkler: 0 },
     seeds: {
+        // Reduzi o tempo de crescimento para 10s para facilitar o teste
         carrot: { name: 'Cenoura', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, color: '#ff9800', type: 'single' },
         pumpkin: { name: 'Abóbora', cost: 150, sellValue: 300, growTime: 20, count: 0, maxStock: 5, currentStock: 5, color: '#ff5722', type: 'single' },
         strawberry: { name: 'Morango', cost: 500, sellValue: 150, growTime: 30, count: 0, maxStock: 3, currentStock: 3, color: '#ff0000', type: 'multi' }
@@ -54,6 +60,7 @@ for (let y = 0; y < GARDEN_HEIGHT; y++) {
     }
 }
 
+// --- 2. REFERÊNCIAS DO DOM ---
 const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
@@ -74,6 +81,7 @@ const modalTitle = document.getElementById('modalTitle');
 const modalContent = document.getElementById('modalContent');
 
 
+// --- 3. LÓGICA DE MOVIMENTO E JOYSTICK ---
 const keys = {};
 document.addEventListener('keydown', (e) => { keys[e.key] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key] = false; });
@@ -83,6 +91,7 @@ let joystickCenter = { x: 0, y: 0 };
 let joystickRadius = 50; 
 
 function setupJoystick() {
+    // Usa getBoundingClientRect() para posição correta do joystick fixo
     const rect = joystickContainer.getBoundingClientRect();
     joystickCenter.x = rect.left + joystickRadius;
     joystickCenter.y = rect.top + joystickRadius;
@@ -186,6 +195,7 @@ function drawPlayer(x, y, frame) {
     ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
 }
 
+// --- 4. LÓGICA DE CENA E DESENHO ---
 
 function drawMap() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -220,6 +230,7 @@ function drawGarden() {
         ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
         
         if (plot.isPlanted) {
+            // Desenha a planta com base no estágio de crescimento
             ctx.fillStyle = gameData.seeds[plot.seedType].color;
             let size = TILE_SIZE * (plot.growthStage * 0.2 + 0.1); 
             ctx.fillRect(x + TILE_SIZE/2 - size/2, y + TILE_SIZE/2 - size/2, size, size);
@@ -293,6 +304,7 @@ function checkMapInteractions() {
 }
 
 
+// --- 5. ADMIN, CRESCIMENTO E COLHEITA ---
 function executeAdminCommand(commandString) {
     const parts = commandString.trim().split(/\s+/);
     const command = parts[0].toLowerCase().replace('/', '');
@@ -340,6 +352,46 @@ function plantSeed(seedType, plotIndex) {
     return false;
 }
 
+// NOVO: Lógica de Crescimento
+function checkGrowth() {
+    const now = Date.now();
+    gameData.plots.forEach(plot => {
+        if (plot.isPlanted) {
+            const seed = gameData.seeds[plot.seedType];
+            // Tempo em segundos que se passou desde que foi plantada
+            const timeElapsedSeconds = (now - plot.growthStart) / 1000;
+            
+            // Calcula o progresso (0 a 1)
+            let progress = timeElapsedSeconds / seed.growTime;
+
+            // Divide o progresso em 5 estágios (0, 1, 2, 3, 4 - Pronto para colheita)
+            plot.growthStage = Math.min(4, Math.floor(progress * 4)); 
+        }
+    });
+}
+
+// NOVO: Lógica de Colheita
+function harvestPlot(plotIndex) {
+    const plot = gameData.plots[plotIndex];
+    // Só colhe se estiver plantada E no estágio final (4)
+    if (plot.isPlanted && plot.growthStage >= 4) {
+        const seed = gameData.seeds[plot.seedType];
+        
+        gameData.money += seed.sellValue; 
+        
+        // Limpa a parcela
+        plot.isPlanted = false;
+        plot.seedType = null;
+        plot.growthStart = 0;
+        plot.growthStage = 0;
+
+        updateStats();
+        return true;
+    }
+    return false;
+}
+
+// --- FUNÇÕES DE LOJA ---
 
 function renderSeedShop() {
     let html = '';
@@ -422,12 +474,45 @@ function openModal(title, contentHTML) {
     updateStats(); 
 }
 
+// --- 6. LISTENERS ---
 closeModalButton.addEventListener('click', () => { shopInteractionModal.style.display = 'none'; });
-adminButtonMap.addEventListener('click', () => { adminPanel.style.display = (adminPanel.style.display === 'none') ? 'block' : 'none'; });
+
+// Lógica de senha do Admin
+adminButtonMap.addEventListener('click', () => {
+    if (adminPanel.style.display === 'block') {
+        adminPanel.style.display = 'none'; // Se já estiver aberto, apenas fecha.
+    } else {
+        const enteredPassword = prompt("Digite a senha de administrador:");
+        if (enteredPassword === ADMIN_PASSWORD) {
+            adminPanel.style.display = 'block';
+            adminOutput.textContent = "Logado como Admin.";
+        } else {
+            alert("Senha incorreta!");
+            adminPanel.style.display = 'none';
+        }
+    }
+});
+
 runCommandButton.addEventListener('click', () => {
     executeAdminCommand(adminCommandInput.value);
     adminCommandInput.value = '';
 });
+
+// Colhe todas as plantas prontas
+harvestAllButton.addEventListener('click', () => {
+    let harvestedCount = 0;
+    gameData.plots.forEach((_, index) => {
+        if (harvestPlot(index)) {
+            harvestedCount++;
+        }
+    });
+    if (harvestedCount > 0) {
+        alert(`Você colheu ${harvestedCount} plantas!`);
+    } else {
+        alert("Nenhuma planta pronta para colheita.");
+    }
+});
+
 
 canvas.addEventListener('click', (e) => {
     if (gameData.currentScene !== 'garden') return;
@@ -440,24 +525,40 @@ canvas.addEventListener('click', (e) => {
 
     const plotIndex = gameData.plots.findIndex(p => p.gridX === gridX && p.gridY === gridY);
     
-    if (plotIndex !== -1 && !gameData.plots[plotIndex].isPlanted) {
-        let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora, 3 - Morango):\n");
+    if (plotIndex !== -1) {
+        const plot = gameData.plots[plotIndex];
         
-        if (choice === '1') {
-             plantSeed('carrot', plotIndex);
-        } else if (choice === '2') {
-             plantSeed('pumpkin', plotIndex);
-        } else if (choice === '3') {
-             plantSeed('strawberry', plotIndex);
-        } else if (choice !== null && choice !== '') {
-             alert("Seleção inválida. Digite 1, 2 ou 3.");
+        // Tenta COLHER primeiro (se estiver pronta)
+        if (plot.isPlanted && plot.growthStage >= 4) {
+            harvestPlot(plotIndex);
+            return; 
+        }
+        
+        // Tenta PLANTAR (se estiver vazia)
+        if (!plot.isPlanted) {
+            let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora, 3 - Morango):\n");
+            
+            if (choice === '1') {
+                plantSeed('carrot', plotIndex);
+            } else if (choice === '2') {
+                plantSeed('pumpkin', plotIndex);
+            } else if (choice === '3') {
+                plantSeed('strawberry', plotIndex);
+            } else if (choice !== null && choice !== '') {
+                alert("Seleção inválida. Digite 1, 2 ou 3.");
+            }
         }
     }
 });
 
+// --- 7. LOOP PRINCIPAL ---
 
 function gameLoop() {
     handlePlayerMovement();
+    
+    // NOVO: Verifica o crescimento em cada ciclo
+    checkGrowth(); 
+
     if (gameData.currentScene === 'map') {
         drawMap();
     } else {
@@ -471,4 +572,4 @@ window.onload = function() {
     changeScene('garden'); 
     updateStats();
     gameLoop();
-        }
+    }
