@@ -2,15 +2,31 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     text-align: center;
+    /* Para prevenir zoom ao usar o joystick no celular */
+    touch-action: manipulation; 
 }
 
 #game-container {
-    width: 530px; /* Ajuste para o novo tamanho do Canvas */
-    margin: 20px auto;
+    width: 420px; 
+    margin: 10px auto;
     border: 1px solid #ccc;
     background-color: #fff;
-    padding: 15px;
+    padding: 10px;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    position: relative; /* Necessário para posicionar o joystick */
+}
+
+/* Garante que o container se adapte em telas pequenas */
+@media (max-width: 600px) {
+    #game-container {
+        width: 95%; 
+        margin: 5px auto;
+        padding: 5px;
+    }
+    #gardenCanvas {
+        width: 100%;
+        height: auto;
+    }
 }
 
 #gardenCanvas {
@@ -22,23 +38,23 @@ body {
 
 #stats p {
     margin: 5px 0;
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: bold;
 }
 
+#controls {
+    margin-top: 10px;
+}
+
 #controls button {
-    padding: 10px;
-    margin: 5px;
+    padding: 8px 12px;
+    margin: 3px;
     cursor: pointer;
-    font-size: 0.9em;
+    font-size: 0.8em;
     border: none;
     border-radius: 5px;
     background-color: #4CAF50;
     color: white;
-}
-
-#controls button:hover:not(:disabled) {
-    background-color: #45a049;
 }
 
 #controls button:disabled {
@@ -46,17 +62,49 @@ body {
     cursor: not-allowed;
 }
 
-/* --- ESTILO DO MODAL UNIFICADO --- */
+/* --- ESTILO DO JOYSTICK VIRTUAL (NOVO) --- */
+#joystick-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    /* Garantir que não interfira no mapa quando não estiver no mapa */
+    display: none; 
+}
+
+#joystick {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    position: absolute;
+}
+
+/* Oculta o joystick em telas grandes (desktop) */
+@media (min-width: 601px) {
+    #joystick-container {
+        display: none !important; 
+    }
+}
+
+
+/* --- ESTILO DE MODAIS E ADMIN (Simplificados) --- */
 .modal {
     display: none; 
     position: fixed; 
-    z-index: 10; /* Z-index alto para ficar acima do mapa */
+    z-index: 100; 
     left: 0;
     top: 0;
     width: 100%; 
     height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
+    background-color: rgba(0,0,0,0.6); 
 }
 
 .modal-content {
@@ -64,8 +112,8 @@ body {
     margin: 10% auto; 
     padding: 20px;
     border: 1px solid #888;
-    width: 80%;
-    max-width: 400px; /* Mais largo para as opções de loja */
+    width: 90%;
+    max-width: 400px; 
     border-radius: 8px;
     text-align: left;
 }
@@ -77,41 +125,20 @@ body {
     font-weight: bold;
 }
 
-.close-button:hover,
-.close-button:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-}
-
 .shop-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 8px 0;
     border-bottom: 1px dashed #eee;
+    font-size: 0.9em;
 }
 
-.shop-item:last-child {
-    border-bottom: none;
-}
-
-.buy-button {
-    background-color: #2196F3 !important;
-}
-
-.buy-button:disabled {
-    background-color: #cccccc !important;
-}
-
-/* --- ESTILO DO PAINEL ADMIN E CONTROLES --- */
 #adminButtonMap {
     background-color: #f44336;
-    margin-top: 10px;
 }
 
 #adminPanel {
-    /* Exibe o painel em linha para não quebrar o layout */
     display: inline-block; 
     width: 90%;
     margin-top: 10px;
@@ -119,26 +146,4 @@ body {
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #f9f9f9;
-}
-
-#adminCommandInput {
-    padding: 8px;
-    width: 65%;
-    box-sizing: border-box;
-}
-
-#runCommandButton {
-    padding: 8px 10px !important;
-    background-color: #f44336 !important;
-}
-
-/* Estilo para os botões internos de seleção de loja */
-#modalContent button {
-    margin: 5px;
-    padding: 10px;
-    background-color: #00bcd4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
 }
