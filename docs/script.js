@@ -37,7 +37,6 @@ let gameData = {
     money: 100,
     inventory: { basicSprinkler: 0, proSprinkler: 0 },
     seeds: {
-        // Reduzi o tempo de crescimento para 10s para facilitar o teste
         carrot: { name: 'Cenoura', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, color: '#ff9800', type: 'single' },
         pumpkin: { name: 'Abóbora', cost: 150, sellValue: 300, growTime: 20, count: 0, maxStock: 5, currentStock: 5, color: '#ff5722', type: 'single' },
         strawberry: { name: 'Morango', cost: 500, sellValue: 150, growTime: 30, count: 0, maxStock: 3, currentStock: 3, color: '#ff0000', type: 'multi' }
@@ -91,7 +90,6 @@ let joystickCenter = { x: 0, y: 0 };
 let joystickRadius = 50; 
 
 function setupJoystick() {
-    // Usa getBoundingClientRect() para posição correta do joystick fixo
     const rect = joystickContainer.getBoundingClientRect();
     joystickCenter.x = rect.left + joystickRadius;
     joystickCenter.y = rect.top + joystickRadius;
@@ -285,7 +283,7 @@ function checkMapInteractions() {
         sceneChanger.onclick = () => changeScene('garden');
         sceneChanger.style.display = 'block';
     } else if (tile === 3) { 
-        sceneChanger.textContent = "Vender Colheitas";
+        sceneChanger.textContent = "Vendedor de Colheitas"; 
         sceneChanger.onclick = openSellerModal;
         sceneChanger.style.display = 'block';
     } else if (tile === 4) { 
@@ -308,17 +306,53 @@ function checkMapInteractions() {
 function executeAdminCommand(commandString) {
     const parts = commandString.trim().split(/\s+/);
     const command = parts[0].toLowerCase().replace('/', '');
-    const value = parseInt(parts[2]) || 0;
+    const arg1 = parts[1] ? parts[1].toLowerCase() : null;
+    const arg2 = parts[2] ? parts[2].toLowerCase() : null;
+    const value = parseInt(parts[3]) || 0;
     let output = '';
 
-    if (command === 'give' && parts[1] === 'money' && value > 0) {
+    if (command === 'give' && arg1 === 'money' && value > 0) {
+        // Comando: /give money 1000
         gameData.money += value;
         output = `Adicionado ${value} Sheckles.`;
-    } else if (command === 'max' && parts[1] === 'all') {
+    } else if (command === 'max' && arg1 === 'all') {
+        // Comando: /max all
         gameData.money = 999999;
         output = "Tudo maximizado.";
+    } else if (command === 'stock' && ['seed', 'gear', 'egg'].includes(arg1) && arg2 && value >= 0) {
+        // NOVO COMANDO: /stock [seed/gear/egg] [nome_item] [quantidade]
+        
+        let targetList;
+        let itemName;
+
+        if (arg1 === 'seed') {
+            targetList = gameData.seeds;
+            itemName = Object.keys(targetList).find(key => key.toLowerCase().includes(arg2));
+            if (itemName && targetList[itemName].maxStock !== undefined) {
+                targetList[itemName].currentStock = value;
+                output = `Estoque da semente **${targetList[itemName].name}** definido para **${value}**.`;
+            }
+        } else if (arg1 === 'gear') {
+            targetList = GEAR;
+            itemName = Object.keys(targetList).find(key => key.toLowerCase().includes(arg2));
+            if (itemName) {
+                gameData.inventory[itemName] = value; 
+                output = `Você recebeu **${value}** x **${targetList[itemName].name}** no inventário.`;
+            }
+        } else if (arg1 === 'egg') {
+            targetList = EGGS;
+            itemName = Object.keys(targetList).find(key => key.toLowerCase().includes(arg2));
+            if (itemName) {
+                output = `O item **${targetList[itemName].name}** existe, mas não usa estoque.`;
+            }
+        }
+        
+        if (!itemName) {
+            output = `Erro: Item **${arg2}** não encontrado em ${arg1} shop.`;
+        }
+
     } else {
-        output = `Comando Admin inválido. Tente: /give money 1000`;
+        output = `Comando Admin inválido. Tente: /give money 1000, /max all, ou /stock seed carrot 99`;
     }
     adminOutput.textContent = output;
     updateStats();
@@ -352,34 +386,28 @@ function plantSeed(seedType, plotIndex) {
     return false;
 }
 
-// NOVO: Lógica de Crescimento
+// Lógica de Crescimento
 function checkGrowth() {
     const now = Date.now();
     gameData.plots.forEach(plot => {
         if (plot.isPlanted) {
             const seed = gameData.seeds[plot.seedType];
-            // Tempo em segundos que se passou desde que foi plantada
             const timeElapsedSeconds = (now - plot.growthStart) / 1000;
-            
-            // Calcula o progresso (0 a 1)
             let progress = timeElapsedSeconds / seed.growTime;
 
-            // Divide o progresso em 5 estágios (0, 1, 2, 3, 4 - Pronto para colheita)
             plot.growthStage = Math.min(4, Math.floor(progress * 4)); 
         }
     });
 }
 
-// NOVO: Lógica de Colheita
+// Lógica de Colheita (para o botão "Colher Todas" - dá valor base)
 function harvestPlot(plotIndex) {
     const plot = gameData.plots[plotIndex];
-    // Só colhe se estiver plantada E no estágio final (4)
     if (plot.isPlanted && plot.growthStage >= 4) {
         const seed = gameData.seeds[plot.seedType];
         
         gameData.money += seed.sellValue; 
         
-        // Limpa a parcela
         plot.isPlanted = false;
         plot.seedType = null;
         plot.growthStart = 0;
@@ -391,7 +419,45 @@ function harvestPlot(plotIndex) {
     return false;
 }
 
-// --- FUNÇÕES DE LOJA ---
+// FUNÇÃO CRÍTICA DE VENDA (Para o Vendedor NPC - Aplica bônus do Pet)
+function sellAllHarvests() {
+    let totalValue = 0;
+    let harvestedCount = 0;
+    const petBonus = gameData.pet.bonus;
+
+    gameData.plots.forEach(plot => {
+        if (plot.isPlanted && plot.growthStage >= 4) {
+            const seed = gameData.seeds[plot.seedType];
+            
+            // Aplica o bônus do Pet na venda do NPC
+            const finalValue = seed.sellValue * petBonus; 
+            totalValue += finalValue;
+            harvestedCount++;
+            
+            // Limpa a parcela após a venda
+            plot.isPlanted = false;
+            plot.seedType = null;
+            plot.growthStart = 0;
+            plot.growthStage = 0;
+        }
+    });
+
+    if (harvestedCount > 0) {
+        gameData.money += totalValue;
+        updateStats();
+        
+        let message = `Você vendeu ${harvestedCount} plantas por ${totalValue.toFixed(2)} Sheckles!`;
+        if (petBonus > 1.0) {
+            message += ` (Bônus do Pet: x${petBonus.toFixed(2)})`;
+        }
+        alert(message);
+    } else {
+        alert("Nenhuma colheita pronta para vender!");
+    }
+}
+
+
+// --- FUNÇÕES DE LOJA E MODAL ---
 
 function renderSeedShop() {
     let html = '';
@@ -463,10 +529,19 @@ function buyAndHatchEgg(eggKey) {
     updateStats();
 }
 
+// Função que abre o modal do Vendedor (com botão de venda e bônus)
 function openSellerModal() {
-    let html = '<p>Vendedor de Colheitas. Implemente a lógica de venda aqui!</p>';
+    let html = `
+        <p>Olá! Eu compro suas colheitas.</p>
+        <p>Seu Pet (${gameData.pet.name}) lhe dá um bônus de **x${gameData.pet.bonus.toFixed(2)}** na venda!</p>
+        <button onclick="sellAllHarvests(); shopInteractionModal.style.display='none';" 
+                style="background-color: #8bc34a; padding: 10px 15px; border: none; border-radius: 5px; color: white; cursor: pointer;">
+            Vender Todas as Colheitas Prontas
+        </button>
+    `;
     openModal("Vendedor de Colheitas", html);
 }
+
 function openModal(title, contentHTML) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalContent').innerHTML = contentHTML;
@@ -480,12 +555,12 @@ closeModalButton.addEventListener('click', () => { shopInteractionModal.style.di
 // Lógica de senha do Admin
 adminButtonMap.addEventListener('click', () => {
     if (adminPanel.style.display === 'block') {
-        adminPanel.style.display = 'none'; // Se já estiver aberto, apenas fecha.
+        adminPanel.style.display = 'none'; 
     } else {
         const enteredPassword = prompt("Digite a senha de administrador:");
         if (enteredPassword === ADMIN_PASSWORD) {
             adminPanel.style.display = 'block';
-            adminOutput.textContent = "Logado como Admin.";
+            adminOutput.textContent = "Logado como Admin. Senha: ArthurSigmaBoy123";
         } else {
             alert("Senha incorreta!");
             adminPanel.style.display = 'none';
@@ -507,7 +582,7 @@ harvestAllButton.addEventListener('click', () => {
         }
     });
     if (harvestedCount > 0) {
-        alert(`Você colheu ${harvestedCount} plantas!`);
+        alert(`Você colheu ${harvestedCount} plantas! O valor base foi adicionado ao seu dinheiro.`);
     } else {
         alert("Nenhuma planta pronta para colheita.");
     }
@@ -556,7 +631,7 @@ canvas.addEventListener('click', (e) => {
 function gameLoop() {
     handlePlayerMovement();
     
-    // NOVO: Verifica o crescimento em cada ciclo
+    // Verifica o crescimento em cada ciclo
     checkGrowth(); 
 
     if (gameData.currentScene === 'map') {
