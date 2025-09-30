@@ -55,16 +55,16 @@ body {
     color: white;
 }
 
-/* --- JOYSTICK VIRTUAL: APARECE EM MOBILE/TABLET, ESCONDE EM DESKTOP GRANDE --- */
+/* --- JOYSTICK VIRTUAL: AJUSTADO PARA NÃO COBRIR BOTÕES --- */
 #joystick-container {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 60px; /* Movido para cima */
+    left: 0px;    /* Encostado na borda */
     width: 100px;
     height: 100px;
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
-    display: flex; /* O JS controla se ele aparece ou não */
+    display: flex; 
     justify-content: center;
     align-items: center;
     z-index: 10;
