@@ -84,7 +84,7 @@ body {
     position: absolute;
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 15000px) {
     #joystick-container {
         display: none !important; 
     }
