@@ -2,7 +2,6 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     text-align: center;
-    /* Essencial para tablets/celulares */
     touch-action: manipulation; 
 }
 
@@ -56,12 +55,10 @@ body {
     color: white;
 }
 
-/* --- JOYSTICK VIRTUAL: AJUSTE FINAL DE POSICIONAMENTO --- */
 #joystick-container {
-    position: absolute;
-    /* Posição final para não cobrir botões em tablets */
-    bottom: 80px; 
-    left: 0px;    
+    position: fixed;
+    bottom: 20px; 
+    left: 20px;    
     width: 100px;
     height: 100px;
     background-color: rgba(0, 0, 0, 0.4);
@@ -80,7 +77,6 @@ body {
     position: absolute;
 }
 
-/* Oculta o joystick APENAS em telas de desktop (maiores que a maioria dos tablets) */
 @media (min-width: 1025px) {
     #joystick-container {
         display: none !important; 
@@ -88,7 +84,6 @@ body {
 }
 
 
-/* --- MODAL (LOJAS) --- */
 .modal {
     display: none; 
     position: fixed; 
