@@ -57,8 +57,8 @@ body {
 
 /* --- SOLUÇÃO FINAL DO JOYSTICK: AGORA MAIS ACIMA NO CANTO INFERIOR ESQUERDO --- */
 #joystick-container {
-    position: fixed; /* Fixado na tela, não no container do jogo */
-    bottom: 50px;    /* MAIS ALTO */
+    position: fixed; 
+    bottom: 80px;    /* AJUSTE FINAL: MAIS ALTO */
     left: 20px;    
     width: 100px;
     height: 100px;
@@ -93,8 +93,8 @@ body {
     z-index: 100; 
     left: 0;
     top: 0;
-    width: 100%; 
-    height: 100%; 
+    width: 100px; 
+    height: 100px; 
     background-color: rgba(0,0,0,0.6); 
 }
 
