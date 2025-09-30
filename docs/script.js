@@ -647,4 +647,4 @@ window.onload = function() {
     changeScene('garden'); 
     updateStats();
     gameLoop();
-    }
+                                                                                          }
