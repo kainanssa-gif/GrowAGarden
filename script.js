@@ -1,3 +1,4 @@
+// --- CONFIGURAÇÕES BÁSICAS E DADOS ---
 const canvas = document.getElementById('gardenCanvas');
 const ctx = canvas.getContext('2d');
 const TILE_SIZE = 40;
@@ -8,6 +9,8 @@ canvas.height = CANVAS_HEIGHT;
 
 const ADMIN_CODE = "admin123";
 const PLAYER_SIZE = 25;
+const GARDEN_WIDTH = 4;
+const GARDEN_HEIGHT = 4;
 
 // Mapa 10x10 (0:Grama, 1:Parede, 2:Entrada Jardim, 3:Vendedor, 4:Loja Semente, 5:Loja Gear, 6:Loja Ovos)
 const GAME_MAP = [
@@ -23,10 +26,6 @@ const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-// Configuração do Jardim (4x4, começa no tile (3, 3) se estivesse no mapa)
-const GARDEN_WIDTH = 4;
-const GARDEN_HEIGHT = 4;
-
 const PETS = { none: { name: 'Nenhum', bonus: 1.0 }, bunny: { name: 'Coelho', bonus: 1.1, color: 'white' }, fox: { name: 'Raposa', bonus: 1.25, color: 'orange' }, dragon: { name: 'Dragão', bonus: 1.5, color: 'purple' } };
 const EGGS = { commonEgg: { name: 'Ovo Comum', cost: 1000, color: '#f0e68c', pets: ['bunny'], chance: [1.0] }, rareEgg: { name: 'Ovo Raro', cost: 5000, color: '#00ced1', pets: ['bunny', 'fox'], chance: [0.7, 0.3] } };
 const GEAR = { basicSprinkler: { name: 'Sprinkler Básico', cost: 500, chance: 0.3, description: "30% chance de mutação" }, proSprinkler: { name: 'Sprinkler Pro', cost: 2000, chance: 0.6, description: "60% chance de mutação" } };
@@ -41,15 +40,20 @@ let gameData = {
     },
     plots: [],
     pet: PETS.none,
-    currentScene: 'map',
-    player: { x: 50, y: 50, speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0 }
+    // MUDANÇA AQUI: Inicia no jardim
+    currentScene: 'garden', 
+    player: { 
+        // MUDANÇA AQUI: Posição inicial no centro do jardim (400px/2 = 200px)
+        x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2, 
+        y: CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2, 
+        speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0 
+    }
 };
 
-// Inicializa as parcelas do jardim
 for (let y = 0; y < GARDEN_HEIGHT; y++) {
     for (let x = 0; x < GARDEN_WIDTH; x++) {
         gameData.plots.push({
-            gridX: x, // Coordenadas relativas ao grid interno do jardim
+            gridX: x, 
             gridY: y,
             isPlanted: false,
             seedType: null,
@@ -60,7 +64,7 @@ for (let y = 0; y < GARDEN_HEIGHT; y++) {
     }
 }
 
-// --- ELEMENTOS HTML ---
+// --- REFERÊNCIAS AO DOM ---
 const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
@@ -80,7 +84,7 @@ const adminCommandInput = document.getElementById('adminCommandInput');
 const runCommandButton = document.getElementById('runCommandButton');
 const adminOutput = document.getElementById('adminOutput');
 
-// --- JOYSTICK E MOVIMENTO (Para celular e desktop) ---
+// --- JOYSTICK E MOVIMENTO ---
 const keys = {};
 document.addEventListener('keydown', (e) => { keys[e.key] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key] = false; });
@@ -96,7 +100,8 @@ function setupJoystick() {
 }
 
 function handleTouchStart(e) {
-    if (gameData.currentScene !== 'map') return;
+    // MUDANÇA AQUI: Joystick ativo em qualquer cena de movimento
+    if (gameData.currentScene !== 'map' && gameData.currentScene !== 'garden') return;
     e.preventDefault();
     setupJoystick();
     joystickActive = true;
@@ -104,7 +109,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchMove(e) {
-    if (!joystickActive || gameData.currentScene !== 'map') return;
+    if (!joystickActive) return;
     
     const touch = e.touches[0];
     let dx = touch.clientX - joystickCenter.x;
@@ -134,6 +139,12 @@ joystickContainer.addEventListener('touchend', handleTouchEnd);
 
 
 function checkCollision(x, y) {
+    if (gameData.currentScene === 'garden') {
+        // Colisão com as bordas do canvas (400x400)
+        return x < 0 || y < 0 || x + PLAYER_SIZE > CANVAS_WIDTH || y + PLAYER_SIZE > CANVAS_HEIGHT;
+    }
+    
+    // Lógica de Colisão do Mapa
     const pX1 = Math.floor(x / TILE_SIZE);
     const pY1 = Math.floor(y / TILE_SIZE);
     const pX2 = Math.floor((x + PLAYER_SIZE - 1) / TILE_SIZE);
@@ -141,14 +152,15 @@ function checkCollision(x, y) {
 
     const checkTile = (tx, ty) => {
         if (tx < 0 || ty < 0 || ty >= GAME_MAP.length || tx >= GAME_MAP[0].length) return true;
-        return GAME_MAP[ty][tx] === 1; // Colide apenas com Parede (1)
+        return GAME_MAP[ty][tx] === 1; 
     };
     
     return checkTile(pX1, pY1) || checkTile(pX2, pY1) || checkTile(pX1, pY2) || checkTile(pX2, pY2);
 }
 
 function handlePlayerMovement() {
-    if (gameData.currentScene !== 'map') return;
+    // MUDANÇA AQUI: Permite movimento no mapa E no jardim
+    if (gameData.currentScene !== 'map' && gameData.currentScene !== 'garden') return;
 
     if (!joystickActive) {
         gameData.player.dx = 0;
@@ -168,11 +180,10 @@ function handlePlayerMovement() {
         const nextX = gameData.player.x + gameData.player.dx;
         const nextY = gameData.player.y + gameData.player.dy;
         
-        // Tenta mover horizontalmente
+        // Lógica de colisão unificada
         if (!checkCollision(nextX, gameData.player.y)) {
             gameData.player.x = nextX;
         }
-        // Tenta mover verticalmente
         if (!checkCollision(gameData.player.x, nextY)) {
             gameData.player.y = nextY;
         }
@@ -181,7 +192,9 @@ function handlePlayerMovement() {
         gameData.player.animationFrame = 0; 
     }
     
-    checkMapInteractions();
+    if (gameData.currentScene === 'map') {
+        checkMapInteractions();
+    }
 }
 
 function drawPlayer(x, y, frame) {
@@ -214,13 +227,13 @@ function drawMap() {
         }
     }
     
-    // Desenho dos nomes das Lojas/Locais
     drawText('JARDIM', 1 * TILE_SIZE + TILE_SIZE / 2, 8 * TILE_SIZE + 20, 'black', 12);
     drawText('SEMENTES', 1 * TILE_SIZE + TILE_SIZE / 2, 1 * TILE_SIZE + 20, 'black', 10);
     drawText('EQUIP.', 2 * TILE_SIZE + TILE_SIZE / 2, 1 * TILE_SIZE + 20, 'black', 10);
     drawText('OVOS', 3 * TILE_SIZE + TILE_SIZE / 2, 1 * TILE_SIZE + 20, 'black', 10);
     drawText('VENDEDOR', 3 * TILE_SIZE + TILE_SIZE / 2, 7 * TILE_SIZE + 20, 'red', 10);
 
+    // O jogador só é desenhado no mapa se a cena for 'map'
     drawPlayer(gameData.player.x, gameData.player.y, gameData.player.animationFrame);
 }
 
@@ -243,9 +256,7 @@ function drawGarden() {
         if (plot.isPlanted) {
             const seed = gameData.seeds[plot.seedType];
             let color = seed.color;
-            let size = PLOT_SIZE * 0.1;
-            
-            size = PLOT_SIZE * (plot.growthStage * 0.15 + 0.1); // Escala o tamanho
+            let size = PLOT_SIZE * (plot.growthStage * 0.15 + 0.1); 
             
             if (plot.isMutated) {
                 color = '#00ff00';
@@ -260,6 +271,9 @@ function drawGarden() {
             }
         }
     });
+
+    // MUDANÇA AQUI: Desenha o player no jardim
+    drawPlayer(gameData.player.x, gameData.player.y, gameData.player.animationFrame);
 }
 
 function drawText(text, x, y, color, size) {
@@ -269,8 +283,7 @@ function drawText(text, x, y, color, size) {
     ctx.fillText(text, x, y);
 }
 
-// --- LÓGICA DE JOGO ---
-
+// --- LÓGICA DE JOGO (Mantida igual) ---
 function updateStats() {
     moneySpan.textContent = gameData.money.toFixed(2);
     const totalSprinklers = gameData.inventory.basicSprinkler + gameData.inventory.proSprinkler;
@@ -353,18 +366,26 @@ function changeScene(scene) {
         waterButton.style.display = 'none';
         adminButtonMap.style.display = 'inline-block';
         if (adminPanel.style.display === 'block') adminPanel.style.display = 'none';
+
+        // MUDANÇA AQUI: Seta a posição do player para a entrada do mapa (para começar a andar)
+        gameData.player.x = 1 * TILE_SIZE; 
+        gameData.player.y = 8 * TILE_SIZE; 
+
     } else { // Jardim
+        // MUDANÇA AQUI: Garante que o botão de saída apareça corretamente
         sceneChanger.textContent = 'Sair do Jardim';
         sceneChanger.onclick = () => {
             changeScene('map');
-            gameData.player.x = 1 * TILE_SIZE; 
-            gameData.player.y = 8 * TILE_SIZE; 
         };
         sceneChanger.style.display = 'block';
-        joystickContainer.style.display = 'none';
+        joystickContainer.style.display = 'flex'; // Mantém o joystick ativo no jardim
         harvestAllButton.style.display = 'inline-block';
         waterButton.style.display = 'inline-block';
         adminButtonMap.style.display = 'none';
+        
+        // Reposiciona o player no centro do jardim ao entrar
+        gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+        gameData.player.y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
     }
 }
 
@@ -398,8 +419,7 @@ function checkMapInteractions() {
     } 
 }
 
-// --- MODAL E FUNÇÕES DE LOJA ---
-
+// --- MODAL E FUNÇÕES DE LOJA (Mantidas iguais) ---
 function openModal(title, contentHTML) {
     modalTitle.textContent = title;
     modalContent.innerHTML = contentHTML;
@@ -509,22 +529,24 @@ function buyAndHatchEgg(eggKey) {
 // --- ADMIN E LISTENERS ---
 
 function executeAdminCommand(commandString) {
-    // ... (Lógica do Admin - mantida simples) ...
     const parts = commandString.trim().split(/\s+/);
     const command = parts[0].toLowerCase().replace('/', '');
     const value1 = parts[1];
     const value2 = parts.length > 2 ? parts.slice(2).join(' ') : null;
     let output = '';
 
-    // Lógica admin simplificada para não sobrecarregar
+    // CORREÇÃO AQUI: Lógica do Admin
     if (command === 'give' && value1 === 'money' && !isNaN(parseInt(value2))) {
         gameData.money += parseInt(value2);
         output = `Adicionado ${parseInt(value2)} Sheckles.`;
+    } else if (command === 'set' && value1 === 'seed' && gameData.seeds[value2]) {
+        gameData.seeds[value2].count += 10;
+        output = `Adicionado 10x ${gameData.seeds[value2].name}.`;
     } else if (command === 'max' && value1 === 'all') {
         gameData.money = 999999;
         output = "Tudo maximizado.";
     } else {
-        output = "Comando Admin desconhecido.";
+        output = `Comando Admin desconhecido ou inválido. Tente: /give money 1000`;
     }
     adminOutput.textContent = output;
     updateStats();
@@ -594,14 +616,18 @@ function gameLoop() {
         handlePlayerMovement();
         drawMap();
     } else {
+        handlePlayerMovement(); // Permite mover no jardim
         runIdleLogic();
         drawGarden();
     }
     requestAnimationFrame(gameLoop);
 }
 
-// Inicialização
-changeScene('map');
-setupJoystick();
-updateStats();
-gameLoop();
+// INICIALIZAÇÃO: Começa no jardim.
+window.onload = function() {
+    // Não precisa chamar changeScene('map') - o gameData já começa em 'garden'
+    changeScene('garden'); 
+    setupJoystick();
+    updateStats();
+    gameLoop();
+                }
