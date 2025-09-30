@@ -1,4 +1,3 @@
-// --- 1. CONFIGURAÇÕES E DADOS GLOBAIS ---
 const canvas = document.getElementById('gardenCanvas');
 const ctx = canvas.getContext('2d');
 const TILE_SIZE = 40;
@@ -11,7 +10,6 @@ const PLAYER_SIZE = 25;
 const GARDEN_WIDTH = 4;
 const GARDEN_HEIGHT = 4;
 
-// Mapa 10x10 (1:Parede, 2:Entrada Jardim, 3:Vendedor, 4:Loja Semente, 5:Loja Gear, 6:Loja Ovos, 0:Grama)
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 5, 6, 0, 0, 0, 0, 0, 1], 
@@ -56,7 +54,6 @@ for (let y = 0; y < GARDEN_HEIGHT; y++) {
     }
 }
 
-// --- 2. REFERÊNCIAS DO DOM ---
 const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
@@ -77,7 +74,6 @@ const modalTitle = document.getElementById('modalTitle');
 const modalContent = document.getElementById('modalContent');
 
 
-// --- 3. LÓGICA DE MOVIMENTO E JOYSTICK ---
 const keys = {};
 document.addEventListener('keydown', (e) => { keys[e.key] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key] = false; });
@@ -190,7 +186,6 @@ function drawPlayer(x, y, frame) {
     ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
 }
 
-// --- 4. LÓGICA DE CENA E DESENHO ---
 
 function drawMap() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -298,7 +293,6 @@ function checkMapInteractions() {
 }
 
 
-// --- 5. ADMIN E FUNCIONALIDADES ---
 function executeAdminCommand(commandString) {
     const parts = commandString.trim().split(/\s+/);
     const command = parts[0].toLowerCase().replace('/', '');
@@ -346,7 +340,6 @@ function plantSeed(seedType, plotIndex) {
     return false;
 }
 
-// --- FUNÇÕES DE LOJA (COMPLETAS) ---
 
 function renderSeedShop() {
     let html = '';
@@ -429,7 +422,6 @@ function openModal(title, contentHTML) {
     updateStats(); 
 }
 
-// --- 6. LISTENERS ---
 closeModalButton.addEventListener('click', () => { shopInteractionModal.style.display = 'none'; });
 adminButtonMap.addEventListener('click', () => { adminPanel.style.display = (adminPanel.style.display === 'none') ? 'block' : 'none'; });
 runCommandButton.addEventListener('click', () => {
@@ -451,14 +443,18 @@ canvas.addEventListener('click', (e) => {
     if (plotIndex !== -1 && !gameData.plots[plotIndex].isPlanted) {
         let choice = prompt("Plantar (1 - Cenoura, 2 - Abóbora, 3 - Morango):\n");
         
-        if (choice === '1') plantSeed('carrot', plotIndex);
-        else if (choice === '2') plantSeed('pumpkin', plotIndex);
-        else if (choice === '3') plantSeed('strawberry', plotIndex);
-        else alert("Seleção inválida.");
+        if (choice === '1') {
+             plantSeed('carrot', plotIndex);
+        } else if (choice === '2') {
+             plantSeed('pumpkin', plotIndex);
+        } else if (choice === '3') {
+             plantSeed('strawberry', plotIndex);
+        } else if (choice !== null && choice !== '') {
+             alert("Seleção inválida. Digite 1, 2 ou 3.");
+        }
     }
 });
 
-// --- 7. LOOP PRINCIPAL ---
 
 function gameLoop() {
     handlePlayerMovement();
@@ -475,4 +471,4 @@ window.onload = function() {
     changeScene('garden'); 
     updateStats();
     gameLoop();
-             }
+        }
