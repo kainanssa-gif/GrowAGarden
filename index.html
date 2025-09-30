@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="game-container">
-        <h2>Grow a Garden 2D</h2>
+        <h2>Grow a Garden 2D - O Retorno</h2>
         
         <div id="stats">
             <p>Dinheiro: <span id="money">100</span> Sheckles</p>
@@ -16,42 +16,25 @@
             <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.0</span>)</p>
         </div>
         
-        <canvas id="gardenCanvas" width="400" height="300"></canvas>
+        <canvas id="gardenCanvas" width="500" height="400"></canvas>
         
         <div id="controls">
-            <button id="shopButton">Loja de Sementes</button>
-            <button id="gearButton">Loja de Equipamentos</button>
-            <button id="eggButton">Loja de Ovos</button>
-            <button id="waterButton" disabled>Regar (Sprinkler)</button>
-            <button id="harvestAllButton" disabled>Colher Todas</button>
-        </div>
+            <button id="sceneChanger" style="display: none;"></button>
 
-        <div id="seedShopModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button" data-modal="seedShopModal">&times;</span>
-                <h3>Loja de Sementes</h3>
-                <div id="seed-shop-items"></div>
-                <p class="restock-info">Estoque se regenera em: <span id="restockTimer">60</span>s</p>
-            </div>
-        </div>
+            <button id="waterButton" style="display: none;">Regar (Sprinkler)</button>
+            <button id="harvestAllButton" style="display: none;">Colher Todas</button>
 
-        <div id="gearShopModal" class="modal">
+            <button id="adminButtonMap">Admin</button>
+        </div>
+        
+        <div id="shopInteractionModal" class="modal">
             <div class="modal-content">
-                <span class="close-button" data-modal="gearShopModal">&times;</span>
-                <h3>Loja de Equipamentos</h3>
-                <div id="gear-shop-items"></div>
+                <span id="closeModalButton" class="close-button">&times;</span>
+                <h3 id="modalTitle">Título do Modal</h3>
+                <div id="modalContent"></div>
             </div>
         </div>
         
-        <div id="eggShopModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button" data-modal="eggShopModal">&times;</span>
-                <h3>Loja de Ovos (Pets)</h3>
-                <div id="egg-shop-items"></div>
-            </div>
-        </div>
-        
-        <input type="text" id="adminCodeInput" placeholder="Código Admin" style="display: none; margin-top: 10px;">
         <div id="adminPanel" style="display: none; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
             <h4>Console Admin</h4>
             <input type="text" id="adminCommandInput" placeholder="Digite /comando valor">
