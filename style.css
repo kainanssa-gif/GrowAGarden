@@ -2,6 +2,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     text-align: center;
+    /* Essencial para tablets/celulares */
     touch-action: manipulation; 
 }
 
@@ -55,11 +56,12 @@ body {
     color: white;
 }
 
-/* --- JOYSTICK VIRTUAL: AJUSTADO PARA NÃO COBRIR BOTÕES --- */
+/* --- JOYSTICK VIRTUAL: AJUSTE FINAL DE POSICIONAMENTO --- */
 #joystick-container {
     position: absolute;
-    bottom: 60px; /* Movido para cima */
-    left: 0px;    /* Encostado na borda */
+    /* Posição final para não cobrir botões em tablets */
+    bottom: 80px; 
+    left: 0px;    
     width: 100px;
     height: 100px;
     background-color: rgba(0, 0, 0, 0.4);
