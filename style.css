@@ -2,7 +2,6 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     text-align: center;
-    /* Para prevenir zoom ao usar o joystick no celular */
     touch-action: manipulation; 
 }
 
@@ -13,10 +12,9 @@ body {
     background-color: #fff;
     padding: 10px;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    position: relative; /* Necessário para posicionar o joystick */
+    position: relative; 
 }
 
-/* Garante que o container se adapte em telas pequenas */
 @media (max-width: 600px) {
     #game-container {
         width: 95%; 
@@ -62,7 +60,7 @@ body {
     cursor: not-allowed;
 }
 
-/* --- ESTILO DO JOYSTICK VIRTUAL (NOVO) --- */
+/* --- JOYSTICK VIRTUAL --- */
 #joystick-container {
     position: absolute;
     bottom: 20px;
@@ -75,7 +73,6 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 10;
-    /* Garantir que não interfira no mapa quando não estiver no mapa */
     display: none; 
 }
 
@@ -87,15 +84,13 @@ body {
     position: absolute;
 }
 
-/* Oculta o joystick em telas grandes (desktop) */
 @media (min-width: 601px) {
     #joystick-container {
         display: none !important; 
     }
 }
 
-
-/* --- ESTILO DE MODAIS E ADMIN (Simplificados) --- */
+/* --- MODAL --- */
 .modal {
     display: none; 
     position: fixed; 
@@ -123,6 +118,7 @@ body {
     float: right;
     font-size: 28px;
     font-weight: bold;
+    cursor: pointer;
 }
 
 .shop-item {
@@ -136,14 +132,4 @@ body {
 
 #adminButtonMap {
     background-color: #f44336;
-}
-
-#adminPanel {
-    display: inline-block; 
-    width: 90%;
-    margin-top: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
 }
