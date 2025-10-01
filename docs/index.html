@@ -4,48 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grow A Garden</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+    
     <div id="game-container">
         <canvas id="gardenCanvas" width="400" height="400"></canvas>
-
-        <div id="controls">
-            <button id="sceneChanger" style="display: none;">Entrar no Jardim</button>
-            <button id="waterButton" style="display: none;">Regar</button>
-            <button id="harvestAllButton" style="display: none;">Colher Tudo</button>
-            <button id="adminButtonMap">Admin</button> 
-        </div>
-
-        <div id="stats">
-            <p>Dinheiro: <span id="money">100.00</span> ¢</p>
-            <p>Equipamentos: <span id="sprinklerCount">0</span></p>
-            <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.00</span>)</p>
-        </div>
         
         <div id="joystick-container">
             <div id="joystick"></div>
+        </div>
+
+        <div id="garden-controls">
+            <button id="waterButton" style="display: none;">Regar</button>
+            <button id="harvestAllButton" style="display: none;">Colher Tudo</button>
+        </div>
+
+        <div id="stats-panel">
+            <p>Dinheiro: <span id="money">100.00</span>¢</p>
+            <p>Equipamentos: <span id="sprinklerCount">1</span></p>
+            <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.00</span>)</p>
+        </div>
+
+        <div id="global-actions">
+            <button id="sceneChanger" style="display: none;">Entrar no Jardim</button>
+            <button id="adminButtonMap" class="admin-button">Admin</button>
         </div>
     </div>
 
     <div id="shopInteractionModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">Loja</h2>
-            <div id="modalScrollContent" class="modal-scroll-area"> 
+            <h2 id="modalTitle">Loja de Sementes</h2>
+            
+            <div id="modalScrollContent" class="modal-scroll-area">
                 <div id="modalContent">
-                    </div>
+                    <p>Carregando...</p>
+                </div>
             </div>
-            <button id="closeModalButton">Fechar</button>
+            <button id="closeModalButton" class="close-button">Fechar</button>
         </div>
     </div>
 
     <div id="adminPanel" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Painel Admin</h2>
+        <div class="modal-content admin-modal">
+            <h2 id="adminTitle">Painel de Administrador</h2>
+            
             <div id="adminScrollContent" class="modal-scroll-area">
                 </div>
-            <button id="closeAdminPanelButton">Fechar Painel</button> 
+            
+            <button id="closeAdminPanelButton" class="close-button">Fechar Admin</button>
         </div>
     </div>
 
