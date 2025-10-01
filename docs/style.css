@@ -7,8 +7,8 @@ body {
     background-color: #333;
     font-family: Arial, sans-serif;
     color: #fff;
-    user-select: none; /* Previne seleção de texto */
-    -webkit-tap-highlight-color: transparent; /* Remove destaque no toque */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #game-container {
@@ -17,7 +17,7 @@ body {
     height: 400px;
     border: 5px solid #000;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    background-color: #556b2f; /* Cor de fundo padrão (grama) */
+    background-color: #556b2f; 
 }
 
 /* Canvas do Jogo */
@@ -42,15 +42,8 @@ body {
     margin: 3px 0;
 }
 
-/* Controles Globais (Sair/Admin) */
-#global-actions {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-}
-
-#global-actions button, #garden-controls button {
+/* --- Estilo Padrão dos Botões de Jogo --- */
+.game-button {
     padding: 8px 12px;
     margin-left: 5px;
     background-color: #4CAF50;
@@ -59,10 +52,23 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.game-button:hover {
+    background-color: #45a049;
 }
 
 .admin-button {
     background-color: #f44336 !important;
+}
+
+/* Controles Globais (Sair/Admin) */
+#global-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
 }
 
 /* Controles do Jardim (Regar/Colher) */
@@ -86,7 +92,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 20; /* Fica acima de tudo */
+    z-index: 20; 
 }
 
 #joystick {
@@ -94,14 +100,14 @@ body {
     height: 50px;
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
-    touch-action: none; /* Essencial para toque */
+    touch-action: none; 
     cursor: grab;
 }
 
 
 /* --- Modal de Interação (Lojas) --- */
 .modal {
-    display: none; /* Escondido por padrão */
+    display: none; 
     position: fixed;
     z-index: 100; 
     left: 0;
@@ -126,13 +132,13 @@ body {
     position: relative;
     display: flex;
     flex-direction: column;
-    max-height: 80vh; /* Limita a altura do modal */
+    max-height: 80vh; 
 }
 
 /* ÁREA DE ROLAGEM CRÍTICA */
 .modal-scroll-area {
-    overflow-y: auto; /* Habilita rolagem vertical */
-    max-height: 50vh; /* Altura máxima da área de rolagem */
+    overflow-y: auto; 
+    max-height: 50vh; 
     margin: 15px 0;
     padding: 0 10px;
     border-top: 1px solid #4a667f;
@@ -141,7 +147,6 @@ body {
 }
 
 #modalContent {
-    /* Container para o conteúdo injetado (Lojas) */
     padding: 10px 0;
 }
 
@@ -176,7 +181,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
-    flex-shrink: 0; /* Não encolhe o botão */
+    flex-shrink: 0; 
     margin-left: 10px;
     transition: background-color 0.2s;
 }
