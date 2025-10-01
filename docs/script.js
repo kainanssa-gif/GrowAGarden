@@ -312,8 +312,8 @@ function handleInput() {
         return;
     }
     
-    // 2. Se o joystick estiver sendo usado, priorize o movimento do joystick.
-    // Se não, use o teclado.
+    // 2. Se o joystick estiver sendo arrastado, priorize o movimento do joystick.
+    // Se não, use o teclado e pare o movimento se nenhuma tecla estiver pressionada.
     if (!isJoystickDragging) {
         // Reinicia dx/dy para o teclado
         gameData.player.dx = 0;
@@ -1002,15 +1002,15 @@ function setupJoystick() {
     
     // Mouse Events
     joystick.addEventListener('mousedown', handleStart);
+    // CRÍTICO: Os eventos de move e up devem estar no 'document' para pegar quando o mouse sai do joystick
     document.addEventListener('mousemove', handleMove);
-    // CRÍTICO: O 'mouseup' deve ser no documento inteiro para garantir que o movimento pare mesmo que o mouse saia do joystick
     document.addEventListener('mouseup', handleEnd); 
 
     // Touch Events
     joystick.addEventListener('touchstart', handleStart);
     document.addEventListener('touchmove', handleMove);
-    // CRÍTICO: O 'touchend' deve ser no documento inteiro
     document.addEventListener('touchend', handleEnd); 
+    document.addEventListener('touchcancel', handleEnd); // Adicionado para segurança
 }
 
 // Teclado (Fallback)
@@ -1057,4 +1057,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-    }
+            }
