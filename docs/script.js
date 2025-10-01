@@ -36,7 +36,7 @@ const GAME_MAP = [
 
 // DADOS DOS ITENS E RARIDADES
 const PETS = { 
-    none: { name: 'Nenhum', bonus: 1.0 }, 
+    none: { name: 'Nenhum', bonus: 1.0, color: '#606060' }, 
     bunny: { name: 'Coelho', bonus: 1.1, color: '#f5f5dc' }, 
     fox: { name: 'Raposa', bonus: 1.25, color: '#ff4500' },
     dragon: { name: 'Dragão', bonus: 1.5, color: '#b22222' } 
@@ -1057,4 +1057,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-            }
+}
