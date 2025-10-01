@@ -17,15 +17,10 @@ const ADMIN_PASSWORD = "ArthurSigmaBoy123";
 
 let isMoving = false;
 let moveDirection = 'none';
+// Variáveis para controle de movimento do jogador pelo teclado
+let keysPressed = {}; 
 
 // MAPA 10x10
-// 0: Grama/Vazio (Andável)
-// 1: Parede/Bloqueio
-// 2: Entrada do Jardim (Muda de Cena)
-// 3: Vendedor de Colheitas
-// 4: Loja de Sementes
-// 5: Loja de Equipamentos
-// 6: Loja de Pets
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 0, 0, 0, 5, 0, 0, 6, 1], 
@@ -310,14 +305,28 @@ function checkGardenInteractions() {
 }
 
 function handleInput() {
-    // Impede movimento se um modal estiver aberto
+    // 1. Se um modal estiver aberto, não permita movimento.
     if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') {
         gameData.player.dx = 0;
         gameData.player.dy = 0;
         return;
     }
     
-    // Joystick/Teclado
+    // 2. Se o joystick estiver sendo usado, priorize o movimento do joystick.
+    // Se não, use o teclado.
+    if (!isJoystickDragging) {
+        // Reinicia dx/dy para o teclado
+        gameData.player.dx = 0;
+        gameData.player.dy = 0;
+
+        // Lógica de Teclado
+        if (keysPressed['w'] || keysPressed['W'] || keysPressed['ArrowUp']) gameData.player.dy = -gameData.player.speed;
+        if (keysPressed['s'] || keysPressed['S'] || keysPressed['ArrowDown']) gameData.player.dy = gameData.player.speed;
+        if (keysPressed['a'] || keysPressed['A'] || keysPressed['ArrowLeft']) gameData.player.dx = -gameData.player.speed;
+        if (keysPressed['d'] || keysPressed['D'] || keysPressed['ArrowRight']) gameData.player.dx = gameData.player.speed;
+    }
+    
+    // 3. Aplica o movimento e checa colisões
     let nextX = gameData.player.x + gameData.player.dx;
     let nextY = gameData.player.y + gameData.player.dy;
 
@@ -332,10 +341,8 @@ function handleInput() {
     gameData.player.x = Math.max(0, Math.min(gameData.player.x, CANVAS_WIDTH - PLAYER_SIZE));
     gameData.player.y = Math.max(0, Math.min(gameData.player.y, CANVAS_HEIGHT - PLAYER_SIZE));
     
-    // Atualiza o frame de animação (simples)
-    if (gameData.player.dx !== 0 || gameData.player.dy !== 0) {
-        gameData.player.animationFrame = (gameData.player.animationFrame + 1) % 60; 
-    }
+    // 4. Atualiza o estado de isMoving
+    isMoving = gameData.player.dx !== 0 || gameData.player.dy !== 0;
 }
 
 // --- Funções de Jogo ---
@@ -946,6 +953,7 @@ let isJoystickDragging = false;
 let startX, startY;
 
 function stopPlayer() {
+    // CRÍTICO: Zera o movimento do jogador quando o joystick é solto
     gameData.player.dx = 0;
     gameData.player.dy = 0;
     isMoving = false;
@@ -980,13 +988,13 @@ function handleMove(e) {
     // Controlar o movimento do jogador
     gameData.player.dx = Math.round(cappedX / 50 * gameData.player.speed);
     gameData.player.dy = Math.round(cappedY / 50 * gameData.player.speed);
-    isMoving = gameData.player.dx !== 0 || gameData.player.dy !== 0;
+    isMoving = true; // Força o estado de movimento enquanto arrasta
 }
 
 function handleEnd() {
     isJoystickDragging = false;
     joystick.style.transform = 'translate(0px, 0px)';
-    stopPlayer();
+    stopPlayer(); // CRÍTICO: Pára o movimento aqui
 }
 
 function setupJoystick() {
@@ -995,35 +1003,26 @@ function setupJoystick() {
     // Mouse Events
     joystick.addEventListener('mousedown', handleStart);
     document.addEventListener('mousemove', handleMove);
-    document.addEventListener('mouseup', handleEnd);
+    // CRÍTICO: O 'mouseup' deve ser no documento inteiro para garantir que o movimento pare mesmo que o mouse saia do joystick
+    document.addEventListener('mouseup', handleEnd); 
 
     // Touch Events
     joystick.addEventListener('touchstart', handleStart);
     document.addEventListener('touchmove', handleMove);
-    document.addEventListener('touchend', handleEnd);
+    // CRÍTICO: O 'touchend' deve ser no documento inteiro
+    document.addEventListener('touchend', handleEnd); 
 }
 
 // Teclado (Fallback)
 document.addEventListener('keydown', (e) => {
     if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') return;
-    
+    keysPressed[e.key] = true;
     isMoving = true;
-    switch (e.key) {
-        case 'w': case 'W': case 'ArrowUp': gameData.player.dy = -gameData.player.speed; break;
-        case 's': case 'S': case 'ArrowDown': gameData.player.dy = gameData.player.speed; break;
-        case 'a': case 'A': case 'ArrowLeft': gameData.player.dx = -gameData.player.speed; break;
-        case 'd': case 'D': case 'ArrowRight': gameData.player.dx = gameData.player.speed; break;
-    }
 });
 
 document.addEventListener('keyup', (e) => {
-    switch (e.key) {
-        case 'w': case 'W': case 'ArrowUp': 
-        case 's': case 'S': case 'ArrowDown': gameData.player.dy = 0; break;
-        case 'a': case 'A': case 'ArrowLeft': 
-        case 'd': case 'D': case 'ArrowRight': gameData.player.dx = 0; break;
-    }
-    isMoving = gameData.player.dx !== 0 || gameData.player.dy !== 0;
+    keysPressed[e.key] = false;
+    // O movimento real é determinado no handleInput
 });
 
 
@@ -1058,4 +1057,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-        }
+    }
