@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grow A Garden</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
 
@@ -32,8 +32,10 @@
     <div id="shopInteractionModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">Loja</h2>
-            <div id="modalContent">
-                </div>
+            <div id="modalScrollContent" class="modal-scroll-area"> 
+                <div id="modalContent">
+                    </div>
+            </div>
             <button id="closeModalButton">Fechar</button>
         </div>
     </div>
@@ -41,9 +43,12 @@
     <div id="adminPanel" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Painel Admin</h2>
-            <input type="text" id="adminCommandInput" placeholder="/give money 1000">
-            <button id="runCommandButton">Executar</button>
-            <p id="adminOutput"></p>
+            <div id="adminScrollContent" class="modal-scroll-area">
+                <input type="text" id="adminCommandInput" placeholder="/give money 1000">
+                <button id="runCommandButton">Executar</button>
+                <p id="adminOutput"></p>
+            </div>
+            <button id="closeAdminPanelButton">Fechar Painel</button> 
         </div>
     </div>
 
