@@ -15,7 +15,17 @@ const GARDEN_HEIGHT = 4;
 const SAVE_KEY = "GrowAGardenSave"; 
 const ADMIN_PASSWORD = "ArthurSigmaBoy123"; 
 
+let isMoving = false;
+let moveDirection = 'none';
+
 // MAPA 10x10
+// 0: Grama/Vazio (Andável)
+// 1: Parede/Bloqueio
+// 2: Entrada do Jardim (Muda de Cena)
+// 3: Vendedor de Colheitas
+// 4: Loja de Sementes
+// 5: Loja de Equipamentos
+// 6: Loja de Pets
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 0, 0, 0, 5, 0, 0, 6, 1], 
@@ -25,7 +35,7 @@ const GAME_MAP = [
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-    [1, 2, 0, 0, 0, 3, 0, 0, 0, 1], // Vendedor movido para 5,8
+    [1, 2, 0, 0, 0, 3, 0, 0, 0, 1], 
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
@@ -78,7 +88,7 @@ const SEEDS_DATA = {
 const INITIAL_DATA = {
     money: 100,
     inventory: { basicSprinkler: 0, proSprinkler: 0, wateringCan: 1 }, 
-    harvestInventory: {}, // Inicializa vazio, será preenchido com chaves
+    harvestInventory: {},
     seeds: JSON.parse(JSON.stringify(SEEDS_DATA)), 
     plots: [],
     pet: PETS.none,
@@ -103,6 +113,8 @@ let gameData = JSON.parse(JSON.stringify(INITIAL_DATA));
 
 
 // --- 2. REFERÊNCIAS DO DOM ---
+const joystickContainer = document.getElementById('joystick-container');
+const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
 const sprinklerCountSpan = document.getElementById('sprinklerCount');
 const petNameSpan = document.getElementById('petName');
@@ -119,19 +131,13 @@ const adminPanel = document.getElementById('adminPanel');
 const closeAdminPanelButton = document.getElementById('closeAdminPanelButton');
 
 const modalTitle = document.getElementById('modalTitle');
-// Referência ao container de rolagem (CRÍTICO para o scroll)
 const modalScrollContent = document.getElementById('modalScrollContent'); 
 const modalContent = document.getElementById('modalContent');
 const adminScrollContent = document.getElementById('adminScrollContent');
-const adminCommandInput = document.getElementById('adminCommandInput');
-const adminOutput = document.getElementById('adminOutput');
 
 
-// --- 3. LÓGICA DE MOVIMENTO E DESENHO (Omitida para brevidade, mas mantida no seu arquivo) ---
+// --- 3. LÓGICA DE MOVIMENTO E DESENHO ---
 
-// ... (Mantenha toda a lógica de movimento, drawMap, drawGarden, etc.) ...
-
-// Função auxiliar para desenhar texto
 function drawText(text, x, y, color, size) {
     ctx.fillStyle = color;
     ctx.font = `bold ${size}px Arial`;
@@ -139,39 +145,298 @@ function drawText(text, x, y, color, size) {
     ctx.fillText(text, x, y);
 }
 
-// [INÍCIO DO BLOCO DE CÓDIGO CRÍTICO PARA ROLAGEM E NOVAS SEMENTES]
+function drawMap() {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 10; x++) {
+            const tileType = GAME_MAP[y][x];
+            let color = '#556b2f'; // Grama (0)
 
-// Função para mudar a cena
-function changeScene(scene) {
-    saveGame(); 
-    
-    gameData.currentScene = scene;
-    
-    // Esconde ou mostra botões conforme a cena (map ou garden)
-    if (sceneChanger) sceneChanger.style.display = 'none';
-    if (harvestAllButton) harvestAllButton.style.display = 'none';
-    if (waterButton) waterButton.style.display = 'none';
-    if (adminButtonMap) adminButtonMap.style.display = 'none';
-    
-    if (scene === 'map') {
-        if (adminButtonMap) adminButtonMap.style.display = 'inline-block';
-        gameData.player.x = 1 * TILE_SIZE; 
-        gameData.player.y = 8 * TILE_SIZE; 
-    } else { 
-        if (sceneChanger) {
-            sceneChanger.textContent = 'Sair do Jardim';
-            sceneChanger.onclick = () => { changeScene('map'); };
-            sceneChanger.style.display = 'block'; 
+            if (tileType === 1) { // Parede
+                color = '#8b4513';
+            } else if (tileType === 2) { // Entrada do Jardim
+                color = '#006400'; 
+                drawText('JARDIM', x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 5, 'white', 10);
+            } else if (tileType === 3) { // Vendedor de Colheitas
+                color = '#ff6347'; 
+                drawText('VENDER', x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 5, 'white', 10);
+            } else if (tileType === 4) { // Loja de Sementes
+                color = '#4682b4';
+                drawText('SEMENTES', x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 5, 'white', 10);
+            } else if (tileType === 5) { // Loja de Equipamentos
+                color = '#ffd700';
+                drawText('EQUIP.', x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 5, 'black', 10);
+            } else if (tileType === 6) { // Loja de Pets
+                color = '#9370db';
+                drawText('PETS', x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 5, 'white', 10);
+            }
+
+            ctx.fillStyle = color;
+            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = '#333';
+            ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
-        if (harvestAllButton) harvestAllButton.style.display = 'inline-block';
-        if (waterButton) waterButton.style.display = 'inline-block';
-
-        gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
-        gameData.player.y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
     }
 }
 
-// --- 4. FUNÇÕES DE SALVAR E CARREGAR (Correção de Dados) ---
+function drawGarden() {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    for (const plot of gameData.plots) {
+        const x = plot.gridX * TILE_SIZE + (CANVAS_WIDTH - GARDEN_WIDTH * TILE_SIZE) / 2;
+        const y = plot.gridY * TILE_SIZE + (CANVAS_HEIGHT - GARDEN_HEIGHT * TILE_SIZE) / 2;
+
+        // 1. Desenhar a terra
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+
+        // 2. Desenhar status (Água)
+        if (plot.isWatered) {
+            ctx.fillStyle = 'rgba(0, 191, 255, 0.4)';
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        }
+        
+        // 3. Desenhar a planta
+        if (plot.isPlanted) {
+            const seed = SEEDS_DATA[plot.seedType];
+            const maxStages = seed.growTime / 5; 
+            const stage = Math.min(plot.growthStage, maxStages);
+            const size = (stage / maxStages) * (TILE_SIZE / 2);
+
+            ctx.fillStyle = seed.color;
+            ctx.beginPath();
+            ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 4. Desenhar Fruto (Se estiver pronto)
+            if (plot.growthStage >= maxStages) {
+                ctx.fillStyle = seed.harvestColor;
+                ctx.beginPath();
+                ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Mutações (Visual)
+                if (plot.isMutated) {
+                    drawText('★', x + TILE_SIZE / 2, y + TILE_SIZE / 2 + 15, 'gold', 10);
+                }
+            }
+        }
+    }
+}
+
+function drawPlayer() {
+    // Desenha o mapa ou o jardim primeiro
+    if (gameData.currentScene === 'map') {
+        drawMap();
+    } else {
+        drawGarden();
+    }
+
+    // Desenha o jogador
+    ctx.fillStyle = gameData.player.color;
+    ctx.beginPath();
+    ctx.arc(gameData.player.x + PLAYER_SIZE / 2, gameData.player.y + PLAYER_SIZE / 2, PLAYER_SIZE / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Desenha o Pet se houver
+    if (gameData.pet.name !== PETS.none.name) {
+        ctx.fillStyle = gameData.pet.color;
+        ctx.beginPath();
+        ctx.arc(gameData.player.x + PLAYER_SIZE / 2 + 15, gameData.player.y + PLAYER_SIZE / 2 - 15, PLAYER_SIZE / 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function checkCollision(nextX, nextY) {
+    if (gameData.currentScene === 'map') {
+        const tileX = Math.floor((nextX + PLAYER_SIZE / 2) / TILE_SIZE);
+        const tileY = Math.floor((nextY + PLAYER_SIZE / 2) / TILE_SIZE);
+        
+        if (tileX < 0 || tileX >= 10 || tileY < 0 || tileY >= 10) return true;
+        if (GAME_MAP[tileY][tileX] === 1) return true;
+    }
+    return false;
+}
+
+function checkMapInteractions() {
+    // Se um modal estiver aberto, não cheque interações.
+    if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') {
+        return; 
+    }
+    
+    const tileX = Math.floor((gameData.player.x + PLAYER_SIZE / 2) / TILE_SIZE);
+    const tileY = Math.floor((gameData.player.y + PLAYER_SIZE / 2) / TILE_SIZE);
+    
+    const tileType = GAME_MAP[tileY][tileX];
+
+    if (tileType === 2) { // Entrada do Jardim
+        sceneChanger.textContent = 'Entrar no Jardim';
+        sceneChanger.onclick = () => { changeScene('garden'); };
+        sceneChanger.style.display = 'block';
+    } else if (tileType === 3) { // Vendedor de Colheitas
+        openModal("Vendedor de Colheitas", renderSellerModal());
+    } else if (tileType === 4) { // Loja de Sementes
+        openModal("Loja de Sementes", renderSeedShop());
+    } else if (tileType === 5) { // Loja de Equipamentos
+        openModal("Loja de Equipamentos", renderGearShop());
+    } else if (tileType === 6) { // Loja de Pets
+        openModal("Loja de Pets", renderEggShop());
+    } else {
+        sceneChanger.style.display = 'none';
+    }
+}
+
+function checkGardenInteractions() {
+    const canvasOffsetX = (CANVAS_WIDTH - GARDEN_WIDTH * TILE_SIZE) / 2;
+    const canvasOffsetY = (CANVAS_HEIGHT - GARDEN_HEIGHT * TILE_SIZE) / 2;
+
+    const px = gameData.player.x + PLAYER_SIZE / 2;
+    const py = gameData.player.y + PLAYER_SIZE / 2;
+
+    for (let i = 0; i < gameData.plots.length; i++) {
+        const plot = gameData.plots[i];
+        const plotX = plot.gridX * TILE_SIZE + canvasOffsetX;
+        const plotY = plot.gridY * TILE_SIZE + canvasOffsetY;
+
+        // Verifica se o jogador está sobre o plot
+        if (px > plotX && px < plotX + TILE_SIZE && py > plotY && py < plotY + TILE_SIZE) {
+            return i; 
+        }
+    }
+    return -1;
+}
+
+function handleInput() {
+    // Impede movimento se um modal estiver aberto
+    if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') {
+        gameData.player.dx = 0;
+        gameData.player.dy = 0;
+        return;
+    }
+    
+    // Joystick/Teclado
+    let nextX = gameData.player.x + gameData.player.dx;
+    let nextY = gameData.player.y + gameData.player.dy;
+
+    if (!checkCollision(nextX, gameData.player.y)) {
+        gameData.player.x = nextX;
+    }
+    if (!checkCollision(gameData.player.x, nextY)) {
+        gameData.player.y = nextY;
+    }
+
+    // Mantém o jogador dentro do canvas
+    gameData.player.x = Math.max(0, Math.min(gameData.player.x, CANVAS_WIDTH - PLAYER_SIZE));
+    gameData.player.y = Math.max(0, Math.min(gameData.player.y, CANVAS_HEIGHT - PLAYER_SIZE));
+    
+    // Atualiza o frame de animação (simples)
+    if (gameData.player.dx !== 0 || gameData.player.dy !== 0) {
+        gameData.player.animationFrame = (gameData.player.animationFrame + 1) % 60; 
+    }
+}
+
+// --- Funções de Jogo ---
+
+function waterPlot(index) {
+    const plot = gameData.plots[index];
+    if (plot.isPlanted && !plot.isWatered) {
+        plot.isWatered = true;
+        saveGame();
+    }
+}
+
+function harvestPlot(index) {
+    const plot = gameData.plots[index];
+    const seed = SEEDS_DATA[plot.seedType];
+    
+    if (!plot.isPlanted || !seed) return false;
+
+    // Calcula o número máximo de estágios (5 segundos por estágio)
+    const maxStages = Math.floor(seed.growTime / 5); 
+
+    if (plot.growthStage >= maxStages) {
+        let harvestAmount = seed.type === 'multi' ? 3 : 1; 
+        
+        // Aplica Bônus de Pet
+        harvestAmount = Math.ceil(harvestAmount * gameData.pet.bonus);
+        
+        // Bônus de Mutação (10% extra)
+        if (plot.isMutated) {
+            harvestAmount = Math.ceil(harvestAmount * 1.1);
+        }
+        
+        // Adiciona ao inventário de colheita
+        gameData.harvestInventory[plot.seedType] = (gameData.harvestInventory[plot.seedType] || 0) + harvestAmount;
+
+        // Reseta o plot (se não for multi-colheita)
+        if (seed.type === 'single') {
+            plot.isPlanted = false;
+            plot.seedType = null;
+        }
+        plot.growthStart = Date.now();
+        plot.growthStage = 0;
+        plot.isWatered = false;
+        plot.isMutated = false;
+
+        saveGame();
+        return true;
+    }
+    return false;
+}
+
+function plantSeed(index, seedKey) {
+    const plot = gameData.plots[index];
+    const seed = gameData.seeds[seedKey];
+
+    if (!plot.isPlanted && seed.count > 0) {
+        plot.isPlanted = true;
+        plot.seedType = seedKey;
+        plot.growthStart = Date.now();
+        plot.growthStage = 0;
+        plot.isWatered = false;
+        plot.isMutated = Math.random() < 0.05; // 5% de chance de mutação
+        seed.count -= 1;
+        saveGame();
+        return true;
+    }
+    return false;
+}
+
+function tryPlant() {
+    const plotIndex = checkGardenInteractions();
+    if (plotIndex !== -1 && !gameData.plots[plotIndex].isPlanted) {
+        let html = `<h3>Plantar Semente no Plot (${plotIndex + 1})</h3>`;
+        let seedsFound = false;
+        
+        Object.keys(gameData.seeds).forEach(key => {
+            const seed = gameData.seeds[key];
+            if (seed.count > 0) {
+                seedsFound = true;
+                html += `<div class="shop-item">
+                    <span>${seed.name} (x${seed.count})</span>
+                    <button class="buy-button" onclick="plantSeedAndCloseModal(${plotIndex}, '${key}')">Plantar</button>
+                </div>`;
+            }
+        });
+        
+        if (!seedsFound) {
+            html += '<p>Você não tem sementes para plantar. Visite a loja!</p>';
+        }
+        
+        openModal("Plantio", html);
+    }
+}
+
+function plantSeedAndCloseModal(plotIndex, seedKey) {
+    plantSeed(plotIndex, seedKey);
+    if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+}
+
+
+// --- 4. FUNÇÕES DE SALVAR E CARREGAR (Mesclagem de Dados) ---
 
 function saveGame() {
     try {
@@ -189,26 +454,23 @@ function loadGame() {
         if (savedData) {
             const loadedData = JSON.parse(savedData);
             
-            // --- CORREÇÃO CRÍTICA DE MESCLAGEM DE DADOS ---
-            
             // 1. Mescla Sementes: Adiciona sementes novas ao save antigo
-            const mergedSeeds = { ...SEEDS_DATA }; // Começa com o template completo (incluindo as novas)
+            const mergedSeeds = JSON.parse(JSON.stringify(SEEDS_DATA)); 
             if (loadedData.seeds) {
-                // Sobrescreve as sementes existentes do save, mantendo as novas
                 for (const key in loadedData.seeds) {
                     if (mergedSeeds[key]) {
-                        // Copia apenas o count e o currentStock, mantendo o growTime/cost atualizado
+                        // Copia apenas o count e o currentStock, mantendo o growTime/cost atualizado do SEEDS_DATA
                         mergedSeeds[key].count = loadedData.seeds[key].count;
                         mergedSeeds[key].currentStock = loadedData.seeds[key].currentStock;
                     }
                 }
             }
             
-            // 2. Mescla Inventário de Colheita: Adiciona novas chaves de colheita ao save antigo
+            // 2. Mescla Inventário de Colheita: Garante que todas as chaves (incluindo as novas) existam
             const mergedHarvestInventory = { ...loadedData.harvestInventory };
             for (const key in SEEDS_DATA) {
                 if (mergedHarvestInventory[key] === undefined) {
-                    mergedHarvestInventory[key] = 0; // Garante que as novas frutas tenham a chave no inventário
+                    mergedHarvestInventory[key] = 0; 
                 }
             }
             
@@ -236,11 +498,94 @@ function loadGame() {
     return false;
 }
 
-// ... (Mantenha as funções simulateOfflineGrowth, executeAdminCommand, updateStats, checkGrowth, etc.) ...
+function simulateOfflineGrowth(seconds) {
+    if (seconds <= 0) return;
 
-// --- 5. FUNÇÕES DE LOJA E MODAL (Ajuste de Referência) ---
+    // Não escalamos o tempo para o crescimento offline para simplificar
+    const effectiveSeconds = seconds; 
+    
+    gameData.plots.forEach(plot => {
+        if (plot.isPlanted) {
+            const seed = SEEDS_DATA[plot.seedType];
+            if (!seed) return; 
 
-// Função principal de renderização da Loja de Sementes
+            const maxStages = Math.floor(seed.growTime / 5); 
+            const timePerStage = 5; 
+
+            const timeSinceStart = (Date.now() - plot.growthStart) / 1000;
+            const newTimeSinceStart = timeSinceStart + effectiveSeconds;
+            
+            const newStage = Math.floor(newTimeSinceStart / timePerStage);
+            
+            if (newStage > plot.growthStage) {
+                plot.growthStage = Math.min(newStage, maxStages);
+                
+                // Se a planta estiver pronta, assume que não foi regada, mas só se não for multi-colheita
+                if (plot.growthStage < maxStages) {
+                     plot.isWatered = false; 
+                }
+            }
+        }
+    });
+
+    saveGame();
+    // console.log(`Simulação offline concluída. ${seconds.toFixed(0)}s real.`);
+}
+
+function checkGrowth() {
+    gameData.plots.forEach(plot => {
+        const seed = SEEDS_DATA[plot.seedType];
+        if (!plot.isPlanted || !seed) return;
+
+        const maxStages = Math.floor(seed.growTime / 5);
+        if (plot.growthStage >= maxStages) return;
+        
+        const timePerStage = 5; // 5 segundos por estágio
+
+        // Regar automático por sprinkler
+        if (!plot.isWatered) {
+            let waterChance = 0;
+            if (gameData.inventory.basicSprinkler > 0) waterChance = 0.3;
+            if (gameData.inventory.proSprinkler > 0) waterChance = 0.6; 
+            
+            if (waterChance > 0 && Math.random() < waterChance) {
+                plot.isWatered = true;
+            }
+        }
+
+        const timeSinceStart = (Date.now() - plot.growthStart) / 1000;
+        const newStage = Math.floor(timeSinceStart / timePerStage);
+        
+        if (newStage > plot.growthStage && plot.isWatered) {
+            plot.growthStage = newStage;
+            
+            // Requer rega novamente para o próximo estágio
+            if (plot.growthStage < maxStages) { 
+                plot.isWatered = false; 
+            }
+        }
+    });
+    saveGame();
+}
+
+function updateStats() {
+    if (moneySpan) moneySpan.textContent = gameData.money.toFixed(2);
+    
+    let gearCount = (gameData.inventory.basicSprinkler || 0) + (gameData.inventory.proSprinkler || 0) + (gameData.inventory.wateringCan || 0);
+    if (sprinklerCountSpan) sprinklerCountSpan.textContent = gearCount; 
+    
+    if (petNameSpan) petNameSpan.textContent = gameData.pet.name;
+    if (petBonusSpan) petBonusSpan.textContent = `x${gameData.pet.bonus.toFixed(2)}`;
+    
+    // Recarrega o conteúdo do Vendedor se o modal estiver aberto
+    if (shopInteractionModal.style.display === 'block' && modalTitle && modalTitle.textContent === "Vendedor de Colheitas") {
+        if (modalContent) modalContent.innerHTML = renderSellerModal();
+    }
+}
+
+
+// --- 5. FUNÇÕES DE LOJA E MODAL ---
+
 function renderSeedShop() {
     let html = '';
     const rarities = { 
@@ -248,11 +593,11 @@ function renderSeedShop() {
         'legendary': 'Lendária', 'mythic': 'Mítica', 'supreme': 'SUPREMA' 
     };
     
-    // Ordena as sementes por raridade (para as raras ficarem no topo da lista)
+    // Ordena as sementes da mais comum para a mais rara
     const sortedSeedKeys = Object.keys(gameData.seeds).sort((a, b) => {
         const rarityOrder = ['common', 'rare', 'epic', 'legendary', 'mythic', 'supreme'];
-        return rarityOrder.indexOf(gameData.seeds[b].rarity) - rarityOrder.indexOf(gameData.seeds[a].rarity);
-    }).reverse(); // Reverte para listar Comum -> Suprema (ou tire o reverse para Suprema -> Comum)
+        return rarityOrder.indexOf(gameData.seeds[a].rarity) - rarityOrder.indexOf(gameData.seeds[b].rarity);
+    });
     
     sortedSeedKeys.forEach(key => {
         const seed = gameData.seeds[key];
@@ -273,7 +618,7 @@ function buySeed(seedKey) {
         gameData.money -= seed.cost;
         seed.currentStock -= 1;
         seed.count += 1;
-        // ATUALIZADO: Renderiza o conteúdo no modalContent (dentro do scroll area)
+        
         if (modalContent) modalContent.innerHTML = renderSeedShop(); 
         saveGame(); 
     }
@@ -281,7 +626,6 @@ function buySeed(seedKey) {
 }
 
 function renderGearShop() {
-    // ... (Conteúdo da loja de equipamentos)
     let html = '';
     Object.keys(GEAR).forEach(key => {
         const gearItem = GEAR[key];
@@ -295,20 +639,271 @@ function renderGearShop() {
     return html;
 }
 
-// ... (Mantenha as funções renderEggShop, renderSellerModal, etc.) ...
+function buyGear(gearKey) {
+    const gearItem = GEAR[gearKey];
+    if (gameData.money >= gearItem.cost) {
+        gameData.money -= gearItem.cost;
+        gameData.inventory[gearKey] = (gameData.inventory[gearKey] || 0) + 1;
+        if (modalContent) modalContent.innerHTML = renderGearShop(); 
+        saveGame();
+    }
+    updateStats();
+}
 
+function renderEggShop() {
+    let html = '';
+    Object.keys(EGGS).forEach(key => {
+        const eggItem = EGGS[key];
+        const disabled = gameData.money < eggItem.cost;
+        html += `<div class="shop-item">
+            <span><strong>${eggItem.name}</strong> (${eggItem.cost}¢)</span>
+            <small>Pode chocar: ${eggItem.pets.map(p => PETS[p].name).join(', ')}</small>
+            <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buyAndHatchEgg('${key}')">Comprar & Chocar</button>
+        </div>`;
+    });
+    return html;
+}
+
+function buyAndHatchEgg(eggKey) {
+    const egg = EGGS[eggKey];
+    if (gameData.money >= egg.cost) {
+        gameData.money -= egg.cost;
+        
+        let petIndex = -1;
+        let cumulativeChance = 0;
+        const rand = Math.random();
+        
+        for (let i = 0; i < egg.chance.length; i++) {
+            cumulativeChance += egg.chance[i];
+            if (rand <= cumulativeChance) {
+                petIndex = i;
+                break;
+            }
+        }
+        
+        const petKey = egg.pets[petIndex];
+        const newPet = PETS[petKey];
+
+        gameData.pet = newPet;
+        
+        alert(`Parabéns! Você chocou um(a) ${newPet.name} com bônus x${newPet.bonus.toFixed(2)}!`);
+        
+        if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+        saveGame();
+    }
+    updateStats();
+}
+
+function renderSellerModal() {
+    let html = '<h3>Itens para Venda</h3>';
+    let totalValue = 0;
+    let itemsFound = false;
+
+    Object.keys(gameData.harvestInventory).forEach(key => {
+        const count = gameData.harvestInventory[key];
+        const seedData = SEEDS_DATA[key];
+        if (count > 0 && seedData) {
+            itemsFound = true;
+            const value = (seedData.sellValue * count).toFixed(2);
+            totalValue += parseFloat(value);
+            
+            html += `<div class="shop-item">
+                <span>**${seedData.name}** (x${count})</span>
+                <small>Valor Total: ${value}¢</small>
+            </div>`;
+        }
+    });
+
+    if (!itemsFound) {
+        html += '<p>Você não tem colheitas para vender.</p>';
+        html += `<button class="buy-button" disabled>Vender Tudo</button>`;
+    } else {
+        html += `<p style="margin-top: 15px;">**Valor Total da Venda:** **${totalValue.toFixed(2)}¢**</p>`;
+        html += `<button class="buy-button" onclick="sellItems()">Vender Tudo (${totalValue.toFixed(2)}¢)</button>`;
+    }
+    
+    return html;
+}
+
+function sellItems() {
+    let totalValue = 0;
+    
+    Object.keys(gameData.harvestInventory).forEach(key => {
+        const count = gameData.harvestInventory[key];
+        const seedData = SEEDS_DATA[key];
+        if (count > 0 && seedData) {
+            totalValue += seedData.sellValue * count;
+            gameData.harvestInventory[key] = 0; // Zera o estoque
+        }
+    });
+
+    gameData.money += totalValue;
+    
+    if (modalContent) modalContent.innerHTML = renderSellerModal();
+    saveGame();
+    updateStats();
+}
+
+// Função que abre o modal (CRÍTICO: Injeta no modalContent)
 function openModal(title, contentHTML) {
     if (modalTitle) modalTitle.textContent = title;
     
-    // ATUALIZADO: Injeta o HTML no modalContent, que está DENTRO do modalScrollContent
     if (modalContent) modalContent.innerHTML = contentHTML; 
     
     if (shopInteractionModal) shopInteractionModal.style.display = 'block';
     updateStats(); 
 }
 
-// --- 6. LISTENERS E ADMIN (Ajuste de Referência Admin) ---
+function changeScene(scene) {
+    saveGame(); 
+    
+    gameData.currentScene = scene;
+    
+    if (sceneChanger) sceneChanger.style.display = 'none';
+    if (harvestAllButton) harvestAllButton.style.display = 'none';
+    if (waterButton) waterButton.style.display = 'none';
+    if (adminButtonMap) adminButtonMap.style.display = 'none';
+    
+    if (scene === 'map') {
+        if (adminButtonMap) adminButtonMap.style.display = 'inline-block';
+        gameData.player.x = 1 * TILE_SIZE; 
+        gameData.player.y = 8 * TILE_SIZE; 
+    } else { 
+        if (sceneChanger) {
+            sceneChanger.textContent = 'Sair do Jardim';
+            sceneChanger.onclick = () => { changeScene('map'); };
+            sceneChanger.style.display = 'block'; 
+        }
+        if (harvestAllButton) harvestAllButton.style.display = 'inline-block';
+        if (waterButton) waterButton.style.display = 'inline-block';
 
+        gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+        gameData.player.y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
+    }
+}
+
+
+// --- 6. ADMIN PANEL ---
+
+function executeAdminCommand(command) {
+    const parts = command.trim().toLowerCase().split(/\s+/);
+    const cmd = parts[0];
+    const target = parts[1];
+    const value = parts[2];
+
+    const output = document.getElementById('adminOutput');
+    let log = '';
+
+    if (cmd === '/give') {
+        const numValue = parseInt(value);
+        if (isNaN(numValue) || numValue < 0) {
+            log = "Valor inválido. Use: /give [money/seed/gear] [item] [quantidade]";
+        } else if (target === 'money') {
+            gameData.money += numValue;
+            log = `Adicionado ${numValue}¢. Dinheiro atual: ${gameData.money.toFixed(2)}¢.`;
+        } else if (target === 'seed' && gameData.seeds[value]) {
+            gameData.seeds[value].count += numValue;
+            log = `Adicionado ${numValue}x ${gameData.seeds[value].name} ao seu inventário.`;
+        } else if (target === 'gear' && GEAR[value]) {
+             gameData.inventory[value] = (gameData.inventory[value] || 0) + numValue;
+             log = `Adicionado ${numValue}x ${GEAR[value].name} ao seu inventário.`;
+        } else {
+            log = `Comando /give inválido ou item não encontrado: ${value}.`;
+        }
+    } else if (cmd === '/stock') {
+        const numValue = parseInt(value);
+        if (target === 'seed' && gameData.seeds[value]) {
+             gameData.seeds[value].currentStock = numValue;
+             log = `Estoque de ${gameData.seeds[value].name} ajustado para: ${numValue}.`;
+        } else {
+            log = `Comando /stock inválido ou item não encontrado.`;
+        }
+    } else {
+        log = "Comando não reconhecido. Tente: /give money 1000, /give seed carrot 5, /stock seed carrot 10";
+    }
+
+    if (output) output.textContent = log;
+    saveGame();
+    updateStats();
+}
+
+
+// --- 7. LISTENERS ---
+
+// Fechar Modal Geral
+if (closeModalButton) {
+    closeModalButton.addEventListener('click', () => {
+        if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+    });
+}
+
+// Fechar Admin Panel
+if (closeAdminPanelButton) {
+    closeAdminPanelButton.addEventListener('click', () => {
+        if (adminPanel) adminPanel.style.display = 'none';
+    });
+}
+
+// Botão Regar
+if (waterButton) {
+    waterButton.addEventListener('click', () => {
+        const plotIndex = checkGardenInteractions();
+        if (plotIndex !== -1) {
+            waterPlot(plotIndex);
+        } else {
+            alert('Aproxime-se de um plot para regar, ou clique nele.');
+        }
+    });
+}
+
+// Colher Tudo
+if (harvestAllButton) {
+    harvestAllButton.addEventListener('click', () => {
+        let harvestedCount = 0;
+        gameData.plots.forEach((plot, index) => {
+            if (harvestPlot(index)) {
+                harvestedCount++;
+            }
+        });
+        alert(`Colheita concluída! ${harvestedCount} plots colhidos.`);
+    });
+}
+
+// Interação no Jardim (Plantar/Colher)
+canvas.addEventListener('click', (e) => {
+    if (gameData.currentScene === 'garden') {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const canvasOffsetX = (CANVAS_WIDTH - GARDEN_WIDTH * TILE_SIZE) / 2;
+        const canvasOffsetY = (CANVAS_HEIGHT - GARDEN_HEIGHT * TILE_SIZE) / 2;
+
+        const gridX = Math.floor((mouseX - canvasOffsetX) / TILE_SIZE);
+        const gridY = Math.floor((mouseY - canvasOffsetY) / TILE_SIZE);
+
+        const plotIndex = gridY * GARDEN_WIDTH + gridX;
+
+        if (plotIndex >= 0 && plotIndex < gameData.plots.length) {
+            const plot = gameData.plots[plotIndex];
+            const seed = plot.seedType ? SEEDS_DATA[plot.seedType] : null;
+
+            if (plot.isPlanted && seed && plot.growthStage >= Math.floor(seed.growTime / 5)) {
+                // Tenta colher
+                harvestPlot(plotIndex);
+            } else if (!plot.isPlanted) {
+                // Tenta plantar (abre modal de plantio)
+                tryPlant();
+            } else if (plot.isPlanted && !plot.isWatered) {
+                // Tenta regar
+                waterPlot(plotIndex);
+            }
+        }
+    }
+});
+
+
+// Admin Panel Listener
 if (adminButtonMap) {
     adminButtonMap.addEventListener('click', () => {
         if (adminPanel) {
@@ -319,12 +914,16 @@ if (adminButtonMap) {
                 if (enteredPassword === ADMIN_PASSWORD) {
                     adminPanel.style.display = 'block';
                     
-                    // Conteúdo do Admin injetado DENTRO da área de scroll do Admin
                     if (adminScrollContent) {
                         adminScrollContent.innerHTML = `
+                            <p id="adminOutput" style="margin-bottom: 10px;">Logado como Admin. Senha: ${ADMIN_PASSWORD}</p>
                             <input type="text" id="adminCommandInput" placeholder="/give money 1000" style="width: 95%; padding: 8px; margin-bottom: 10px;">
-                            <button id="runCommandButton">Executar</button>
-                            <p id="adminOutput" style="margin-top: 10px;">Logado como Admin. Senha: ${ADMIN_PASSWORD}</p>
+                            <button id="runCommandButton" class="buy-button">Executar</button>
+                            <p style="font-size: 12px; margin-top: 10px;">Comandos: <br>
+                                /give money [valor] <br>
+                                /give seed [tipo] [qtd] (ex: /give seed cosmicDust 1)<br>
+                                /stock seed [tipo] [novo_estoque]
+                            </p>
                         `;
                         // Reatribui o listener do botão Run Command
                         document.getElementById('runCommandButton')?.addEventListener('click', () => {
@@ -340,17 +939,124 @@ if (adminButtonMap) {
         }
     });
 }
-// ... (Mantenha o restante dos listeners) ...
 
 
-// --- 7. LOOP PRINCIPAL E INICIALIZAÇÃO ---
+// --- 8. LÓGICA DE MOVIMENTO (JOYSTICK) ---
 
-// ... (Mantenha gameLoop) ...
+let isJoystickDragging = false;
+let startX, startY;
+
+function stopPlayer() {
+    gameData.player.dx = 0;
+    gameData.player.dy = 0;
+    isMoving = false;
+}
+
+function handleStart(e) {
+    e.preventDefault();
+    if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') return;
+
+    isJoystickDragging = true;
+    const touch = e.touches ? e.touches[0] : e;
+    startX = touch.clientX;
+    startY = touch.clientY;
+    joystick.style.transform = 'translate(0px, 0px)';
+}
+
+function handleMove(e) {
+    if (!isJoystickDragging) return;
+    e.preventDefault();
+
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+
+    const distance = Math.min(50, Math.sqrt(dx * dx + dy * dy));
+    const angle = Math.atan2(dy, dx);
+    const cappedX = distance * Math.cos(angle);
+    const cappedY = distance * Math.sin(angle);
+
+    joystick.style.transform = `translate(${cappedX}px, ${cappedY}px)`;
+    
+    // Controlar o movimento do jogador
+    gameData.player.dx = Math.round(cappedX / 50 * gameData.player.speed);
+    gameData.player.dy = Math.round(cappedY / 50 * gameData.player.speed);
+    isMoving = gameData.player.dx !== 0 || gameData.player.dy !== 0;
+}
+
+function handleEnd() {
+    isJoystickDragging = false;
+    joystick.style.transform = 'translate(0px, 0px)';
+    stopPlayer();
+}
+
+function setupJoystick() {
+    if (!joystick) return;
+    
+    // Mouse Events
+    joystick.addEventListener('mousedown', handleStart);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+
+    // Touch Events
+    joystick.addEventListener('touchstart', handleStart);
+    document.addEventListener('touchmove', handleMove);
+    document.addEventListener('touchend', handleEnd);
+}
+
+// Teclado (Fallback)
+document.addEventListener('keydown', (e) => {
+    if (shopInteractionModal.style.display === 'block' || adminPanel.style.display === 'block') return;
+    
+    isMoving = true;
+    switch (e.key) {
+        case 'w': case 'W': case 'ArrowUp': gameData.player.dy = -gameData.player.speed; break;
+        case 's': case 'S': case 'ArrowDown': gameData.player.dy = gameData.player.speed; break;
+        case 'a': case 'A': case 'ArrowLeft': gameData.player.dx = -gameData.player.speed; break;
+        case 'd': case 'D': case 'ArrowRight': gameData.player.dx = gameData.player.speed; break;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    switch (e.key) {
+        case 'w': case 'W': case 'ArrowUp': 
+        case 's': case 'S': case 'ArrowDown': gameData.player.dy = 0; break;
+        case 'a': case 'A': case 'ArrowLeft': 
+        case 'd': case 'D': case 'ArrowRight': gameData.player.dx = 0; break;
+    }
+    isMoving = gameData.player.dx !== 0 || gameData.player.dy !== 0;
+});
+
+
+// --- 9. LOOP PRINCIPAL E INICIALIZAÇÃO ---
+
+function gameLoop() {
+    // 1. Lidar com a entrada e movimento
+    handleInput(); 
+
+    // 2. Lógica de Jogo
+    if (gameData.currentScene === 'map') {
+        checkMapInteractions();
+    } else {
+        checkGrowth(); 
+    }
+
+    // 3. Desenhar
+    drawPlayer();
+
+    // 4. Salvar (apenas a cada 5 segundos se o jogador estiver se movendo)
+    if (isMoving && Date.now() - gameData.player.lastMove > 5000) {
+        saveGame();
+        gameData.player.lastMove = Date.now();
+    }
+    
+    requestAnimationFrame(gameLoop);
+}
 
 window.onload = function() {
     loadGame();
-    // A inicialização da cena deve ocorrer após o loadGame
+    setupJoystick();
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-                }
+                         }
