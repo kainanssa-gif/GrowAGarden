@@ -17,7 +17,7 @@ const SAVE_KEY = "GrowAGardenSave";
 // SENHA DE ADMIN
 const ADMIN_PASSWORD = "ArthurSigmaBoy123"; 
 
-// NOVO MAPA 10x10
+// MAPA 10x10
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 0, 0, 0, 5, 0, 0, 6, 1], 
@@ -31,31 +31,25 @@ const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-// --- NOVOS DADOS PARA ITENS E NPCs ---
-
-// Pets (Mais opções e bônus variados)
+// --- NOVOS DADOS PARA ITENS E NPCs (Sem alterações) ---
 const PETS = { 
     none: { name: 'Nenhum', bonus: 1.0 }, 
     bunny: { name: 'Coelho', bonus: 1.1, color: '#f5f5dc' }, 
     fox: { name: 'Raposa', bonus: 1.25, color: '#ff4500' },
     dragon: { name: 'Dragão', bonus: 1.5, color: '#b22222' } 
 };
-
-// Eggs (Raridade e mais pets)
 const EGGS = { 
     commonEgg: { name: 'Ovo Comum', cost: 1000, color: '#f0e68c', pets: ['bunny'], chance: [1.0] }, 
     rareEgg: { name: 'Ovo Raro', cost: 5000, color: '#00ced1', pets: ['bunny', 'fox'], chance: [0.7, 0.3] },
     legendaryEgg: { name: 'Ovo Lendário', cost: 25000, color: '#ffd700', pets: ['fox', 'dragon'], chance: [0.5, 0.5] }
 };
-
-// Gear (Adicionado o regador - wateringCan)
 const GEAR = { 
     basicSprinkler: { name: 'Sprinkler Básico', cost: 500, description: "30% chance de regar auto" }, 
     proSprinkler: { name: 'Sprinkler Pro', cost: 2000, description: "60% chance de regar auto" },
     wateringCan: { name: 'Regador Básico', cost: 100, description: "Item para regar suas plantas" }
 };
 
-// Sementes (Raridades adicionadas)
+// --- SEMENTES ATUALIZADAS (5 Novas Adições) ---
 const SEEDS_DATA = {
     // Comuns
     carrot: { name: 'Cenoura Comum', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, color: '#ff9800', type: 'single', harvestColor: '#ff9800', rarity: 'common' },
@@ -65,28 +59,41 @@ const SEEDS_DATA = {
     blueBerry: { name: 'Mirtilo Raro', cost: 400, sellValue: 800, growTime: 15, count: 0, maxStock: 4, currentStock: 4, color: '#4169e1', type: 'multi', harvestColor: '#4169e1', rarity: 'rare' },
     moonFlower: { name: 'Flor Lunar Rara', cost: 800, sellValue: 1800, growTime: 25, count: 0, maxStock: 2, currentStock: 2, color: '#e0ffff', type: 'single', harvestColor: '#e0ffff', rarity: 'rare' },
     
-    // Épicas
+    // Épicas (Antigas Lendárias)
     goldenMelon: { name: 'Melancia Dourada', cost: 2000, sellValue: 5000, growTime: 40, count: 0, maxStock: 1, currentStock: 1, color: '#ffd700', type: 'single', harvestColor: '#ffd700', rarity: 'epic' },
-    starFruit: { name: 'Carambola Estelar', cost: 1500, sellValue: 3500, growTime: 35, count: 0, maxStock: 1, currentStock: 1, color: '#fdfd96', type: 'multi', harvestColor: '#fdfd96', rarity: 'epic' }
+    starFruit: { name: 'Carambola Estelar', cost: 1500, sellValue: 3500, growTime: 35, count: 0, maxStock: 1, currentStock: 1, color: '#fdfd96', type: 'multi', harvestColor: '#fdfd96', rarity: 'epic' },
+
+    // --- NOVAS LENDÁRIAS / ACIMA ---
+    // Lendárias (Nova camada)
+    shadowBloom: { name: 'Flor Sombra', cost: 5000, sellValue: 12000, growTime: 60, count: 0, maxStock: 1, currentStock: 1, color: '#301934', type: 'single', harvestColor: '#301934', rarity: 'legendary' },
+    crystalGrape: { name: 'Uva de Cristal', cost: 7500, sellValue: 18000, growTime: 70, count: 0, maxStock: 1, currentStock: 1, color: '#e6e6fa', type: 'multi', harvestColor: '#e6e6fa', rarity: 'legendary' },
+
+    // Míticas (Nova camada)
+    solarMango: { name: 'Manga Solar', cost: 15000, sellValue: 35000, growTime: 90, count: 0, maxStock: 1, currentStock: 1, color: '#ff8c00', type: 'single', harvestColor: '#ff8c00', rarity: 'mythic' },
+    voidApple: { name: 'Maçã do Vazio', cost: 20000, sellValue: 50000, growTime: 120, count: 0, maxStock: 1, currentStock: 1, color: '#000000', type: 'single', harvestColor: '#000000', rarity: 'mythic' },
+    
+    // Mítica Suprema (O Mais Raro)
+    cosmicDust: { name: 'Poeira Cósmica', cost: 50000, sellValue: 150000, growTime: 180, count: 0, maxStock: 1, currentStock: 1, color: '#8a2be2', type: 'multi', harvestColor: '#8a2be2', rarity: 'supreme' },
 };
 
 // Dados iniciais
 const INITIAL_DATA = {
     money: 100,
-    inventory: { basicSprinkler: 0, proSprinkler: 0, wateringCan: 1 }, // Começa com 1 Regador
-    harvestInventory: { carrot: 0, pumpkin: 0, blueBerry: 0, moonFlower: 0, goldenMelon: 0, starFruit: 0 }, 
-    seeds: JSON.parse(JSON.stringify(SEEDS_DATA)), // Cópia limpa do estado
+    inventory: { basicSprinkler: 0, proSprinkler: 0, wateringCan: 1 }, 
+    // Inventário de Colheitas expandido
+    harvestInventory: { carrot: 0, pumpkin: 0, blueBerry: 0, moonFlower: 0, goldenMelon: 0, starFruit: 0, shadowBloom: 0, crystalGrape: 0, solarMango: 0, voidApple: 0, cosmicDust: 0 }, 
+    seeds: JSON.parse(JSON.stringify(SEEDS_DATA)), 
     plots: [],
     pet: PETS.none,
     currentScene: 'map', 
     player: { 
         x: 1 * TILE_SIZE, 
         y: 8 * TILE_SIZE, 
-        speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0, color: '#606060' // CORREÇÃO 3: Cor inicial estável
+        speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0, color: '#606060' 
     }
 };
 
-// Inicialização dos plots
+// Inicialização dos plots (mantida)
 for (let y = 0; y < GARDEN_HEIGHT; y++) {
     for (let x = 0; x < GARDEN_WIDTH; x++) {
         INITIAL_DATA.plots.push({
@@ -98,7 +105,7 @@ for (let y = 0; y < GARDEN_HEIGHT; y++) {
 let gameData = JSON.parse(JSON.stringify(INITIAL_DATA));
 
 
-// --- 2. REFERÊNCIAS DO DOM ---
+// --- 2. REFERÊNCIAS DO DOM (Atualizadas) ---
 const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
@@ -109,19 +116,25 @@ const harvestAllButton = document.getElementById('harvestAllButton');
 const waterButton = document.getElementById('waterButton');
 const sceneChanger = document.getElementById('sceneChanger');
 const adminButtonMap = document.getElementById('adminButtonMap');
+
 const shopInteractionModal = document.getElementById('shopInteractionModal');
 const closeModalButton = document.getElementById('closeModalButton');
+
 const adminPanel = document.getElementById('adminPanel');
-const adminCommandInput = document.getElementById('adminCommandInput');
 const runCommandButton = document.getElementById('runCommandButton');
-const adminOutput = document.getElementById('adminOutput');
-const modalTitle = document.getElementById('modalTitle');
-const modalContent = document.getElementById('modalContent');
-// CORREÇÃO 2: Nova referência para o botão de fechar o painel admin
 const closeAdminPanelButton = document.getElementById('closeAdminPanelButton');
 
+const modalTitle = document.getElementById('modalTitle');
+// NOVO: Referência ao container de rolagem do Modal
+const modalScrollContent = document.getElementById('modalScrollContent'); 
+const modalContent = document.getElementById('modalContent');
+// NOVO: Referência ao container de rolagem do Admin
+const adminScrollContent = document.getElementById('adminScrollContent');
+const adminCommandInput = document.getElementById('adminCommandInput');
+const adminOutput = document.getElementById('adminOutput');
 
-// --- 3. LÓGICA DE MOVIMENTO E JOYSTICK ---
+
+// --- 3. LÓGICA DE MOVIMENTO E JOYSTICK (Mantida) ---
 const keys = {};
 document.addEventListener('keydown', (e) => { keys[e.key] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key] = false; });
@@ -239,7 +252,6 @@ function handlePlayerMovement() {
 
 // Desenho do jogador com animação de "pernas"
 function drawPlayer(x, y, frame) {
-    // CORREÇÃO 3: Garante que a cor do jogador está estável (Não ligada a Pets)
     ctx.fillStyle = gameData.player.color; 
     
     // Desenho do corpo (cabeça/tronco)
@@ -253,8 +265,8 @@ function drawPlayer(x, y, frame) {
         ctx.fillRect(x + PLAYER_SIZE - 10, y + PLAYER_SIZE * 0.7, 5, PLAYER_SIZE * 0.3);
     } else {
         // Posição de movimento (pernas abertas)
-        ctx.fillRect(x + 2, y + PLAYER_SIZE * 0.7, 5, PLAYER_SIZE * 0.3); // Perna esquerda mais para fora
-        ctx.fillRect(x + PLAYER_SIZE - 7, y + PLAYER_SIZE * 0.7, 5, PLAYER_SIZE * 0.3); // Perna direita mais para fora
+        ctx.fillRect(x + 2, y + PLAYER_SIZE * 0.7, 5, PLAYER_SIZE * 0.3); 
+        ctx.fillRect(x + PLAYER_SIZE - 7, y + PLAYER_SIZE * 0.7, 5, PLAYER_SIZE * 0.3); 
     }
     
     // Simulação de olhos
@@ -263,20 +275,19 @@ function drawPlayer(x, y, frame) {
     ctx.fillRect(x + PLAYER_SIZE - 10, y + 5, 5, 5);
 }
 
-// --- 4. LÓGICA DE CENA E DESENHO (Estética Aprimorada) ---
+// --- 4. LÓGICA DE CENA E DESENHO (Mantida) ---
 
-// NOVO drawNPC (Melhoria 4: Vendedor dentro do balcão/barraca)
+// drawNPC (com balcão/barraca)
 function drawNPC(x, y, color, label, isShop = false) {
-    const npcSize = isShop ? 15 : 20; // NPC menor dentro da barraca
+    const npcSize = isShop ? 15 : 20; 
     const centerX = x + TILE_SIZE / 2;
     
     // Desenha o balcão/barraca para lojas (4, 5, 6)
     if (isShop) {
-        ctx.fillStyle = '#4a2c16'; // Cor de madeira escura para o balcão
+        ctx.fillStyle = '#4a2c16'; 
         ctx.fillRect(x + 5, y + TILE_SIZE - 10, TILE_SIZE - 10, 10);
     }
     
-    // Posição do corpo (mais para cima se for shop, para simular que está atrás do balcão)
     const bodyY = isShop ? y + TILE_SIZE - npcSize - 15 : y + TILE_SIZE - npcSize - 5; 
 
     // Corpo
@@ -301,30 +312,27 @@ function drawMap() {
     for (let y = 0; y < GAME_MAP.length; y++) {
         for (let x = 0; x < GAME_MAP[y].length; x++) {
             const tile = GAME_MAP[y][x];
-            let color = '#4CAF50'; // Grama
+            let color = '#4CAF50'; 
             
-            // Desenha a cor base do tile
-            if (tile === 1) color = '#795548'; // Parede
-            if (tile === 2) color = '#c3f5d6'; // Entrada do Jardim (Tom verde claro)
+            if (tile === 1) color = '#795548'; 
+            if (tile === 2) color = '#c3f5d6'; 
             
             ctx.fillStyle = color;
             ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-            // Adiciona borda escura para dar profundidade (exceto na grama)
             if (tile !== 0) {
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
             
-            // Desenha NPCs sobre as lojas/vendedor
-            if (tile === 3) { // Vendedor de Colheitas (Não é loja/balcão)
+            if (tile === 3) { 
                 drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#ff9800', 'VENDER', false);
-            } else if (tile === 4) { // Loja Semente (isShop = true)
+            } else if (tile === 4) { 
                 drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#8bc34a', 'SEMENTES', true); 
-            } else if (tile === 5) { // Loja Gear (isShop = true)
+            } else if (tile === 5) { 
                 drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#2196f3', 'EQUIP.', true); 
-            } else if (tile === 6) { // Loja Ovos (isShop = true)
+            } else if (tile === 6) { 
                 drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#e91e63', 'OVOS', true); 
             }
         }
@@ -342,11 +350,9 @@ function drawGarden() {
         const x = plot.gridX * TILE_SIZE;
         const y = plot.gridY * TILE_SIZE;
         
-        // Desenha a terra
         ctx.fillStyle = '#805030';
         ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
         
-        // Desenha a borda do Plot
         ctx.strokeStyle = '#6b432e';
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
@@ -354,17 +360,17 @@ function drawGarden() {
         if (plot.isPlanted) {
             const seed = gameData.seeds[plot.seedType] || SEEDS_DATA.carrot;
             
-            // Fundo da planta (folhas)
             ctx.fillStyle = '#4CAF50';
             ctx.beginPath();
             ctx.arc(x + TILE_SIZE/2, y + TILE_SIZE/2, TILE_SIZE * 0.25, 0, Math.PI * 2);
             ctx.fill();
             
-            // Fruta/Vegetal (Baseado no estágio)
             let size = TILE_SIZE * (plot.growthStage * 0.15 + 0.1); 
             ctx.fillStyle = seed.harvestColor;
             
+            // Desenho do item
             if (plot.growthStage === 4) {
+                // Desenho customizado para Cenoura
                 if (plot.seedType === 'carrot') {
                     ctx.beginPath();
                     ctx.moveTo(x + TILE_SIZE/2, y + TILE_SIZE/4);
@@ -372,7 +378,15 @@ function drawGarden() {
                     ctx.lineTo(x + TILE_SIZE * 0.3, y + TILE_SIZE * 0.75);
                     ctx.closePath();
                     ctx.fill();
+                // Desenho customizado para Maçã do Vazio (preta)
+                } else if (plot.seedType === 'voidApple') {
+                    ctx.beginPath();
+                    ctx.arc(x + TILE_SIZE/2, y + TILE_SIZE/2, size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'gray'; // Cabo
+                    ctx.fillRect(x + TILE_SIZE/2 - 1, y + TILE_SIZE/2 - size/2 - 5, 2, 5);
                 } else {
+                    // Desenho padrão para outras frutas redondas
                     ctx.beginPath();
                     ctx.arc(x + TILE_SIZE/2, y + TILE_SIZE/2, size / 2, 0, Math.PI * 2);
                     ctx.fill();
@@ -473,7 +487,7 @@ function checkMapInteractions() {
     }
 }
 
-// --- 5. FUNÇÕES DE SALVAR E CARREGAR ---
+// --- 5. FUNÇÕES DE SALVAR E CARREGAR (Atualizadas para novos itens) ---
 
 function saveGame() {
     try {
@@ -494,9 +508,16 @@ function loadGame() {
             // Mescla para garantir que todos os novos itens existam.
             const mergedSeeds = { ...SEEDS_DATA, ...loadedData.seeds };
             
+            // Garante que o inventário de colheitas tem todas as chaves
             const mergedHarvestInventory = { ...INITIAL_DATA.harvestInventory };
             for (const key in loadedData.harvestInventory) {
                 mergedHarvestInventory[key] = loadedData.harvestInventory[key];
+            }
+            // Adiciona as novas colheitas se o save antigo não as tiver
+            for (const key in INITIAL_DATA.harvestInventory) {
+                if(loadedData.harvestInventory[key] === undefined) {
+                     mergedHarvestInventory[key] = INITIAL_DATA.harvestInventory[key];
+                }
             }
             
             const mergedInventory = { ...INITIAL_DATA.inventory };
@@ -510,7 +531,6 @@ function loadGame() {
             gameData.harvestInventory = mergedHarvestInventory;
             gameData.inventory = mergedInventory;
 
-            // CORREÇÃO 3: Garante que a cor do jogador não foi alterada pelo Pet ou outros bugs
             gameData.player.color = INITIAL_DATA.player.color; 
             
             if (gameData.lastSaveTime) {
@@ -539,7 +559,7 @@ function simulateOfflineGrowth(timeOfflineSeconds) {
 }
 
 
-// --- 6. ADMIN, CRESCIMENTO E COLHEITA ---
+// --- 6. ADMIN, CRESCIMENTO E COLHEITA (Mantidas) ---
 function executeAdminCommand(commandString) {
     const parts = commandString.trim().split(/\s+/);
     const command = parts[0].toLowerCase().replace('/', '');
@@ -590,7 +610,8 @@ function executeAdminCommand(commandString) {
     }
     
     saveGame(); 
-    if (adminOutput) adminOutput.textContent = output;
+    // Agora injeta no adminScrollContent
+    if (adminOutput) adminOutput.textContent = output; 
     updateStats();
 }
 
@@ -603,6 +624,7 @@ function updateStats() {
     if (petNameSpan) petNameSpan.textContent = gameData.pet.name;
     if (petBonusSpan) petBonusSpan.textContent = `x${gameData.pet.bonus.toFixed(2)}`;
     
+    // Recarrega o conteúdo do Vendedor se o modal estiver aberto
     if (shopInteractionModal && shopInteractionModal.style.display === 'block' && modalTitle && modalTitle.textContent === "Vendedor de Colheitas") {
         if (modalContent) modalContent.innerHTML = renderSellerModal();
     }
@@ -668,21 +690,17 @@ function harvestPlot(plotIndex) {
 
         gameData.harvestInventory[seedType] = (gameData.harvestInventory[seedType] || 0) + 1;
         
-        // CORREÇÃO 1: Lógica para colheita infinita (multi) vs colheita única (single)
         if (seed.type === 'multi') {
-            // Colheita Múltipla: Apenas reseta o estágio para 0 e o tempo de início para agora
             plot.growthStage = 0;
             plot.growthStart = Date.now();
-            plot.isWatered = false; // Permite regar novamente
+            plot.isWatered = false; 
         } else {
-            // Colheita Única: Reseta todo o plot
             plot.isPlanted = false;
             plot.seedType = null;
             plot.growthStart = 0;
             plot.growthStage = 0;
             plot.isWatered = false;
         }
-        // FIM CORREÇÃO 1
 
         saveGame(); 
         updateStats();
@@ -730,11 +748,15 @@ if (waterButton) {
 }
 
 
-// --- 7. FUNÇÕES DE LOJA E MODAL ---
+// --- 7. FUNÇÕES DE LOJA E MODAL (Atualizadas para o novo container) ---
 
 function renderSeedShop() {
     let html = '';
-    const rarities = { 'common': 'Comum', 'rare': 'Rara', 'epic': 'Épica' };
+    // Adicionado os novos níveis de raridade
+    const rarities = { 
+        'common': 'Comum', 'rare': 'Rara', 'epic': 'Épica', 
+        'legendary': 'Lendária', 'mythic': 'Mítica', 'supreme': 'SUPREMA' 
+    };
     
     Object.keys(gameData.seeds).forEach(key => {
         const seed = gameData.seeds[key];
@@ -742,7 +764,7 @@ function renderSeedShop() {
         
         html += `<div class="shop-item" style="border: 1px solid #ddd; margin: 5px; padding: 5px;">
             <span><strong>${seed.name}</strong> (${rarities[seed.rarity]}) - **${seed.cost}¢**</span>
-            <br><small>Estoque: ${seed.currentStock} | Seu: ${seed.count}</small>
+            <br><small>Tempo: ${seed.growTime}s | Estoque: ${seed.currentStock} | Seu: ${seed.count}</small>
             <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buySeed('${key}')">Comprar</button>
         </div>`;
     });
@@ -754,6 +776,7 @@ function buySeed(seedKey) {
         gameData.money -= seed.cost;
         seed.currentStock -= 1;
         seed.count += 1;
+        // Agora injeta no modalContent
         if (modalContent) modalContent.innerHTML = renderSeedShop(); 
         saveGame(); 
     }
@@ -834,7 +857,13 @@ function renderSellerModal() {
     `;
     let itemsFound = false;
 
-    Object.keys(gameData.harvestInventory).forEach(key => {
+    // Ordena as chaves de colheita para listar as raras/míticas primeiro
+    const sortedHarvestKeys = Object.keys(gameData.harvestInventory).filter(key => gameData.seeds[key]).sort((a, b) => {
+        const rarityOrder = ['common', 'rare', 'epic', 'legendary', 'mythic', 'supreme'];
+        return rarityOrder.indexOf(gameData.seeds[b].rarity) - rarityOrder.indexOf(gameData.seeds[a].rarity);
+    });
+
+    sortedHarvestKeys.forEach(key => {
         const count = gameData.harvestInventory[key] || 0; 
         const seed = gameData.seeds[key];
         
@@ -885,6 +914,7 @@ function sellItems(itemKey) {
     gameData.harvestInventory[itemKey] -= qtyToSell;
     
     alert(`Vendido ${qtyToSell}x ${seed.name} por ${totalValue.toFixed(2)} Sheckles!`);
+    // Agora injeta no modalContent
     if (modalContent) modalContent.innerHTML = renderSellerModal(); 
     
     saveGame(); 
@@ -894,12 +924,15 @@ function sellItems(itemKey) {
 
 function openModal(title, contentHTML) {
     if (modalTitle) modalTitle.textContent = title;
-    if (modalContent) modalContent.innerHTML = contentHTML;
+    
+    // ATUALIZADO: Injeta o HTML no modalContent, que está dentro do modalScrollContent
+    if (modalContent) modalContent.innerHTML = contentHTML; 
+    
     if (shopInteractionModal) shopInteractionModal.style.display = 'block';
     updateStats(); 
 }
 
-// --- 8. LISTENERS ---
+// --- 8. LISTENERS (Mantidos) ---
 if (closeModalButton) {
     closeModalButton.addEventListener('click', () => { 
         if (shopInteractionModal) shopInteractionModal.style.display = 'none'; 
@@ -907,7 +940,6 @@ if (closeModalButton) {
     });
 }
 
-// CORREÇÃO 2: Listener para o novo botão de fechar o painel admin
 if (closeAdminPanelButton) {
     closeAdminPanelButton.addEventListener('click', () => {
         if (adminPanel) {
@@ -919,14 +951,24 @@ if (closeAdminPanelButton) {
 if (adminButtonMap) {
     adminButtonMap.addEventListener('click', () => {
         if (adminPanel) {
-            // Permite fechar o painel clicando novamente no botão 'Admin'
             if (adminPanel.style.display === 'block') {
                  adminPanel.style.display = 'none'; 
             } else {
                 const enteredPassword = prompt("Digite a senha de administrador:");
                 if (enteredPassword === ADMIN_PASSWORD) {
                     adminPanel.style.display = 'block';
-                    if (adminOutput) adminOutput.textContent = "Logado como Admin. Senha: ArthurSigmaBoy123";
+                    // NOVO: Adicionado um campo de input e output para o painel admin
+                    const adminHtml = `
+                        <input type="text" id="adminCommandInput" placeholder="/give money 1000">
+                        <button id="runCommandButton">Executar</button>
+                        <p id="adminOutput">Logado como Admin. Senha: ArthurSigmaBoy123</p>
+                    `;
+                    if (adminScrollContent) adminScrollContent.innerHTML = adminHtml;
+                    // Reatribui o listener do botão Run Command
+                    document.getElementById('runCommandButton')?.addEventListener('click', () => {
+                         const input = document.getElementById('adminCommandInput');
+                         if (input) executeAdminCommand(input.value);
+                    });
                 } else {
                     alert("Senha incorreta!");
                     adminPanel.style.display = 'none';
@@ -938,9 +980,10 @@ if (adminButtonMap) {
 
 if (runCommandButton) {
     runCommandButton.addEventListener('click', () => {
-        if (adminCommandInput) {
-            executeAdminCommand(adminCommandInput.value);
-            adminCommandInput.value = '';
+        const input = document.getElementById('adminCommandInput');
+        if (input) {
+            executeAdminCommand(input.value);
+            input.value = '';
         }
     });
 }
@@ -977,7 +1020,6 @@ if (canvas) {
         if (plotIndex !== -1) {
             const plot = gameData.plots[plotIndex];
             
-            // Colheita (adiciona ao inventário)
             if (plot.isPlanted && plot.growthStage >= 4) {
                 if(harvestPlot(plotIndex)) {
                      alert(`Colheita de ${gameData.seeds[plot.seedType].name} realizada!`);
@@ -985,10 +1027,8 @@ if (canvas) {
                 return; 
             }
             
-            // Plantio
             if (!plot.isPlanted) {
                 const seedKeys = Object.keys(gameData.seeds);
-                // Filtra apenas sementes que o jogador tem no inventário (seed.count > 0)
                 const availableSeeds = seedKeys.filter(key => gameData.seeds[key].count > 0);
                 
                 if (availableSeeds.length === 0) {
@@ -996,6 +1036,10 @@ if (canvas) {
                      return;
                 }
                 
+                // Exibe as sementes disponíveis por ordem de raridade (decrescente)
+                const rarityOrder = ['supreme', 'mythic', 'legendary', 'epic', 'rare', 'common'];
+                availableSeeds.sort((a, b) => rarityOrder.indexOf(gameData.seeds[a].rarity) - rarityOrder.indexOf(gameData.seeds[b].rarity));
+
                 const seedChoices = availableSeeds.map((key, index) => `${index + 1} - ${gameData.seeds[key].name} (${gameData.seeds[key].count} no inventário)`).join('\n');
                 let choice = prompt(`Plantar (Digite o número):\n${seedChoices}\n`);
                 
@@ -1015,7 +1059,7 @@ if (canvas) {
 setInterval(saveGame, 30000); 
 
 
-// --- 9. LOOP PRINCIPAL E INICIALIZAÇÃO ---
+// --- 9. LOOP PRINCIPAL E INICIALIZAÇÃO (Mantidos) ---
 
 function gameLoop() {
     if (canvas && ctx) {
@@ -1040,4 +1084,4 @@ window.onload = function() {
     updateStats();
     
     gameLoop();
-            }
+                   }
