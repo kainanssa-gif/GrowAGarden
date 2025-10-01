@@ -1057,4 +1057,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-    }
+            }
