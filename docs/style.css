@@ -61,7 +61,7 @@ body {
     cursor: not-allowed;
 }
 
-/* --- Modal Base --- */
+/* --- Modal Base (Lojas/Admin) --- */
 .modal {
     display: none; 
     position: fixed;
@@ -71,31 +71,36 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4); 
-    padding-top: 60px;
+    background-color: rgba(0,0,0,0.7); /* Fundo mais escuro */
+    padding-top: 20px;
 }
 
 .modal-content {
     background-color: #fefefe;
     margin: 5% auto; 
-    padding: 20px;
+    padding: 15px;
     border: 1px solid #888;
-    width: 80%; 
-    max-width: 400px; 
+    width: 90%; 
+    max-width: 450px; /* Um pouco mais largo */
     border-radius: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    /* Flexbox para gerenciar o scroll */
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.4);
+    
+    /* ESSENCIAL para que a rolagem funcione no filho */
     display: flex;
     flex-direction: column;
-    max-height: 90vh; 
+    max-height: 95vh; 
 }
 
-/* --- ÁREA DE SCROLL (NOVO!) --- */
+/* --- ÁREA DE SCROLL (O AJUSTE CRÍTICO) --- */
 .modal-scroll-area {
-    /* Ocupa o máximo de espaço permitido pela modal-content */
+    /* Garante que esta área ocupe o espaço restante e force a rolagem */
     flex-grow: 1; 
-    max-height: 70vh; /* Altura máxima da rolagem (70% da viewport) */
-    overflow-y: auto; /* Habilita a rolagem vertical */
+    
+    /* DEFINIÇÃO DA ALTURA QUE ATIVA A ROLAGEM */
+    height: 100%; /* Permite ocupar a altura total disponível */
+    max-height: 65vh; /* Se o conteúdo exceder esta altura (65% da tela), a rolagem ativa */
+    overflow-y: auto; /* ATIVA A ROLAGEM VERTICAL */
+    
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
@@ -108,22 +113,17 @@ body {
     padding: 10px;
     margin-bottom: 8px;
     border-radius: 5px;
-    background-color: #e8f5e9; /* Fundo verde claro */
+    background-color: #e8f5e9; 
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; /* Coloca o texto e o botão em linhas separadas */
+    gap: 5px;
 }
-
 .shop-item button {
-    margin-left: 10px;
+    align-self: flex-end; /* Botão alinhado à direita */
+    width: 100px;
 }
 
-.shop-item strong {
-    color: #2e7d32;
-}
-
-
-/* --- Estilos do Joystick (Mantidos) --- */
+/* --- Estilos do Joystick --- */
 #joystick-container {
     position: fixed;
     bottom: 20px;
