@@ -17,8 +17,7 @@ const SAVE_KEY = "GrowAGardenSave";
 // SENHA DE ADMIN
 const ADMIN_PASSWORD = "ArthurSigmaBoy123"; 
 
-// NOVO MAPA 10x10 (Distanciamento das lojas e vendedor)
-// 1:Parede, 2:Entrada Jardim, 3:Vendedor, 4:Loja Semente, 5:Loja Gear, 6:Loja Ovos, 0:Grama
+// NOVO MAPA 10x10
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 4, 0, 0, 0, 5, 0, 0, 6, 1], 
@@ -83,7 +82,7 @@ const INITIAL_DATA = {
     player: { 
         x: 1 * TILE_SIZE, 
         y: 8 * TILE_SIZE, 
-        speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0, color: '#606060' 
+        speed: 4, dx: 0, dy: 0, lastMove: 0, animationFrame: 0, color: '#606060' // CORREÇÃO 3: Cor inicial estável
     }
 };
 
@@ -100,7 +99,6 @@ let gameData = JSON.parse(JSON.stringify(INITIAL_DATA));
 
 
 // --- 2. REFERÊNCIAS DO DOM ---
-// CORREÇÃO: Usamos getElementById, o HTML deve ter estes IDs
 const joystickContainer = document.getElementById('joystick-container');
 const joystick = document.getElementById('joystick');
 const moneySpan = document.getElementById('money');
@@ -119,6 +117,8 @@ const runCommandButton = document.getElementById('runCommandButton');
 const adminOutput = document.getElementById('adminOutput');
 const modalTitle = document.getElementById('modalTitle');
 const modalContent = document.getElementById('modalContent');
+// CORREÇÃO 2: Nova referência para o botão de fechar o painel admin
+const closeAdminPanelButton = document.getElementById('closeAdminPanelButton');
 
 
 // --- 3. LÓGICA DE MOVIMENTO E JOYSTICK ---
@@ -131,7 +131,6 @@ let joystickCenter = { x: 0, y: 0 };
 let joystickRadius = 50; 
 
 function setupJoystick() {
-    // CORREÇÃO DE BUG: Verifica se o elemento existe antes de tentar manipulá-lo
     if (joystickContainer) {
         const rect = joystickContainer.getBoundingClientRect();
         joystickCenter.x = rect.left + joystickRadius;
@@ -176,7 +175,6 @@ function handleTouchEnd() {
     gameData.player.dy = 0;
 }
 
-// CORREÇÃO DE BUG: Adiciona listeners apenas se o container existir
 if (joystickContainer) {
     joystickContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
     joystickContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -241,7 +239,8 @@ function handlePlayerMovement() {
 
 // Desenho do jogador com animação de "pernas"
 function drawPlayer(x, y, frame) {
-    ctx.fillStyle = gameData.player.color;
+    // CORREÇÃO 3: Garante que a cor do jogador está estável (Não ligada a Pets)
+    ctx.fillStyle = gameData.player.color; 
     
     // Desenho do corpo (cabeça/tronco)
     ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE * 0.7);
@@ -266,12 +265,20 @@ function drawPlayer(x, y, frame) {
 
 // --- 4. LÓGICA DE CENA E DESENHO (Estética Aprimorada) ---
 
-// Desenha um NPC de Loja/Vendedor
-function drawNPC(x, y, color, label) {
-    const npcSize = 20;
-    const bodyY = y + TILE_SIZE - npcSize - 5;
+// NOVO drawNPC (Melhoria 4: Vendedor dentro do balcão/barraca)
+function drawNPC(x, y, color, label, isShop = false) {
+    const npcSize = isShop ? 15 : 20; // NPC menor dentro da barraca
     const centerX = x + TILE_SIZE / 2;
     
+    // Desenha o balcão/barraca para lojas (4, 5, 6)
+    if (isShop) {
+        ctx.fillStyle = '#4a2c16'; // Cor de madeira escura para o balcão
+        ctx.fillRect(x + 5, y + TILE_SIZE - 10, TILE_SIZE - 10, 10);
+    }
+    
+    // Posição do corpo (mais para cima se for shop, para simular que está atrás do balcão)
+    const bodyY = isShop ? y + TILE_SIZE - npcSize - 15 : y + TILE_SIZE - npcSize - 5; 
+
     // Corpo
     ctx.fillStyle = color;
     ctx.fillRect(centerX - npcSize / 2, bodyY, npcSize, npcSize);
@@ -287,6 +294,7 @@ function drawNPC(x, y, color, label) {
     ctx.fillRect(centerX - 15, y, 30, 15);
     drawText(label, centerX, y + 10, 'white', 8);
 }
+
 
 function drawMap() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -310,14 +318,14 @@ function drawMap() {
             }
             
             // Desenha NPCs sobre as lojas/vendedor
-            if (tile === 3) { // Vendedor
-                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#ff9800', 'VENDER');
-            } else if (tile === 4) { // Loja Semente
-                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#8bc34a', 'SEMENTES');
-            } else if (tile === 5) { // Loja Gear
-                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#2196f3', 'EQUIP.');
-            } else if (tile === 6) { // Loja Ovos
-                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#e91e63', 'OVOS');
+            if (tile === 3) { // Vendedor de Colheitas (Não é loja/balcão)
+                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#ff9800', 'VENDER', false);
+            } else if (tile === 4) { // Loja Semente (isShop = true)
+                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#8bc34a', 'SEMENTES', true); 
+            } else if (tile === 5) { // Loja Gear (isShop = true)
+                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#2196f3', 'EQUIP.', true); 
+            } else if (tile === 6) { // Loja Ovos (isShop = true)
+                drawNPC(x * TILE_SIZE, y * TILE_SIZE, '#e91e63', 'OVOS', true); 
             }
         }
     }
@@ -344,7 +352,6 @@ function drawGarden() {
         ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
         
         if (plot.isPlanted) {
-            // CORREÇÃO: Usa SEEDS_DATA como fallback caso seedType seja nulo por algum motivo
             const seed = gameData.seeds[plot.seedType] || SEEDS_DATA.carrot;
             
             // Fundo da planta (folhas)
@@ -399,7 +406,6 @@ function changeScene(scene) {
     
     gameData.currentScene = scene;
     
-    // CORREÇÃO: Garante que os botões são mostrados/escondidos apenas se existirem
     if (sceneChanger) sceneChanger.style.display = 'none';
     if (harvestAllButton) harvestAllButton.style.display = 'none';
     if (waterButton) waterButton.style.display = 'none';
@@ -485,26 +491,27 @@ function loadGame() {
         if (savedData) {
             const loadedData = JSON.parse(savedData);
             
-            // CORREÇÃO CRÍTICA: Mescla para garantir que todos os novos itens existam.
+            // Mescla para garantir que todos os novos itens existam.
             const mergedSeeds = { ...SEEDS_DATA, ...loadedData.seeds };
             
-            // Garante que o inventário de colheitas tem todas as chaves
             const mergedHarvestInventory = { ...INITIAL_DATA.harvestInventory };
             for (const key in loadedData.harvestInventory) {
                 mergedHarvestInventory[key] = loadedData.harvestInventory[key];
             }
             
-            // Garante que o inventário de equipamentos tem todas as chaves
             const mergedInventory = { ...INITIAL_DATA.inventory };
             for (const key in loadedData.inventory) {
                 mergedInventory[key] = loadedData.inventory[key];
             }
 
             // Sobrescreve as chaves específicas com os dados carregados
-            gameData = { ...INITIAL_DATA, ...loadedData }; // Usa INITIAL_DATA como base
+            gameData = { ...INITIAL_DATA, ...loadedData }; 
             gameData.seeds = mergedSeeds;
             gameData.harvestInventory = mergedHarvestInventory;
             gameData.inventory = mergedInventory;
+
+            // CORREÇÃO 3: Garante que a cor do jogador não foi alterada pelo Pet ou outros bugs
+            gameData.player.color = INITIAL_DATA.player.color; 
             
             if (gameData.lastSaveTime) {
                 const timeOfflineSeconds = (Date.now() - gameData.lastSaveTime) / 1000;
@@ -523,7 +530,6 @@ function loadGame() {
 function simulateOfflineGrowth(timeOfflineSeconds) {
     gameData.plots.forEach(plot => {
         if (plot.isPlanted) {
-            // Se a semente não existe mais (dados antigos), pula.
             if (!gameData.seeds[plot.seedType]) return; 
             
             plot.growthStart -= timeOfflineSeconds * 1000; 
@@ -570,7 +576,7 @@ function executeAdminCommand(commandString) {
         } else if (arg1 === 'harvest') { 
             targetList = gameData.harvestInventory;
             itemName = Object.keys(targetList).find(key => key.toLowerCase().includes(arg2));
-            if (itemName && gameData.seeds[itemName]) { // Verifica se a semente existe no seeds data
+            if (itemName && gameData.seeds[itemName]) { 
                 gameData.harvestInventory[itemName] = value;
                 output = `Inventário de colheita **${gameData.seeds[itemName].name}** definido para **${value}**.`;
             }
@@ -629,7 +635,7 @@ function checkGrowth() {
     gameData.plots.forEach(plot => {
         if (plot.isPlanted && plot.growthStage < 4) {
             const seed = gameData.seeds[plot.seedType];
-            if (!seed) return; // Proteção contra sementes nulas
+            if (!seed) return; 
             
             let growTime = seed.growTime;
             
@@ -662,11 +668,21 @@ function harvestPlot(plotIndex) {
 
         gameData.harvestInventory[seedType] = (gameData.harvestInventory[seedType] || 0) + 1;
         
-        plot.isPlanted = false;
-        plot.seedType = null;
-        plot.growthStart = 0;
-        plot.growthStage = 0;
-        plot.isWatered = false;
+        // CORREÇÃO 1: Lógica para colheita infinita (multi) vs colheita única (single)
+        if (seed.type === 'multi') {
+            // Colheita Múltipla: Apenas reseta o estágio para 0 e o tempo de início para agora
+            plot.growthStage = 0;
+            plot.growthStart = Date.now();
+            plot.isWatered = false; // Permite regar novamente
+        } else {
+            // Colheita Única: Reseta todo o plot
+            plot.isPlanted = false;
+            plot.seedType = null;
+            plot.growthStart = 0;
+            plot.growthStage = 0;
+            plot.isWatered = false;
+        }
+        // FIM CORREÇÃO 1
 
         saveGame(); 
         updateStats();
@@ -714,7 +730,7 @@ if (waterButton) {
 }
 
 
-// --- 7. FUNÇÕES DE LOJA E MODAL (ADAPTAÇÃO DE VENDA) ---
+// --- 7. FUNÇÕES DE LOJA E MODAL ---
 
 function renderSeedShop() {
     let html = '';
@@ -819,10 +835,10 @@ function renderSellerModal() {
     let itemsFound = false;
 
     Object.keys(gameData.harvestInventory).forEach(key => {
-        const count = gameData.harvestInventory[key] || 0; // CORREÇÃO: Usa 0 se for undefined
+        const count = gameData.harvestInventory[key] || 0; 
         const seed = gameData.seeds[key];
         
-        if (count > 0 && seed) { // Garante que a semente existe no SEEDS_DATA
+        if (count > 0 && seed) { 
             itemsFound = true;
             const price = (seed.sellValue * petBonus).toFixed(2);
             
@@ -891,11 +907,21 @@ if (closeModalButton) {
     });
 }
 
+// CORREÇÃO 2: Listener para o novo botão de fechar o painel admin
+if (closeAdminPanelButton) {
+    closeAdminPanelButton.addEventListener('click', () => {
+        if (adminPanel) {
+            adminPanel.style.display = 'none';
+        }
+    });
+}
+
 if (adminButtonMap) {
     adminButtonMap.addEventListener('click', () => {
         if (adminPanel) {
+            // Permite fechar o painel clicando novamente no botão 'Admin'
             if (adminPanel.style.display === 'block') {
-                adminPanel.style.display = 'none'; 
+                 adminPanel.style.display = 'none'; 
             } else {
                 const enteredPassword = prompt("Digite a senha de administrador:");
                 if (enteredPassword === ADMIN_PASSWORD) {
@@ -962,13 +988,21 @@ if (canvas) {
             // Plantio
             if (!plot.isPlanted) {
                 const seedKeys = Object.keys(gameData.seeds);
-                const seedChoices = seedKeys.map((key, index) => `${index + 1} - ${gameData.seeds[key].name} (${gameData.seeds[key].count} no inventário)`).join('\n');
+                // Filtra apenas sementes que o jogador tem no inventário (seed.count > 0)
+                const availableSeeds = seedKeys.filter(key => gameData.seeds[key].count > 0);
+                
+                if (availableSeeds.length === 0) {
+                     alert("Você não tem sementes no seu inventário para plantar!");
+                     return;
+                }
+                
+                const seedChoices = availableSeeds.map((key, index) => `${index + 1} - ${gameData.seeds[key].name} (${gameData.seeds[key].count} no inventário)`).join('\n');
                 let choice = prompt(`Plantar (Digite o número):\n${seedChoices}\n`);
                 
                 const index = parseInt(choice) - 1;
 
-                if (index >= 0 && index < seedKeys.length) {
-                    plantSeed(seedKeys[index], plotIndex);
+                if (index >= 0 && index < availableSeeds.length) {
+                    plantSeed(availableSeeds[index], plotIndex);
                 } else if (choice !== null && choice !== '') {
                     alert("Seleção inválida.");
                 }
@@ -984,7 +1018,6 @@ setInterval(saveGame, 30000);
 // --- 9. LOOP PRINCIPAL E INICIALIZAÇÃO ---
 
 function gameLoop() {
-    // CORREÇÃO: Verifica se o canvas e o contexto existem antes de desenhar
     if (canvas && ctx) {
         handlePlayerMovement();
         
@@ -1000,13 +1033,11 @@ function gameLoop() {
 }
 
 window.onload = function() {
-    // Tenta carregar os dados. Se não carregar, usa INITIAL_DATA.
     loadGame();
     
     setupJoystick();
     changeScene(gameData.currentScene); 
     updateStats();
     
-    // Inicia o loop do jogo
     gameLoop();
-    }
+            }
