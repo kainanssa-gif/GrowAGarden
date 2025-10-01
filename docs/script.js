@@ -202,7 +202,7 @@ function drawGarden() {
         // 3. Desenhar a planta
         if (plot.isPlanted) {
             const seed = SEEDS_DATA[plot.seedType];
-            const maxStages = seed.growTime / 5; 
+            const maxStages = Math.floor(seed.growTime / 5); 
             const stage = Math.min(plot.growthStage, maxStages);
             const size = (stage / maxStages) * (TILE_SIZE / 2);
 
@@ -529,7 +529,6 @@ function simulateOfflineGrowth(seconds) {
     });
 
     saveGame();
-    // console.log(`Simulação offline concluída. ${seconds.toFixed(0)}s real.`);
 }
 
 function checkGrowth() {
@@ -1059,4 +1058,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-                         }
+        }
