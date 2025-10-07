@@ -28,6 +28,12 @@ const OTHER_IMAGES = {}; // Para imagens como a Placa de Expansão
 let imagesLoaded = 0;
 let totalImages = 0;
 
+// Variáveis do Joystick (Toque)
+const MAX_DISTANCE = 50; 
+let activeTouchId = null; 
+let joystickStartX = 0;
+let joystickStartY = 0;
+
 // MAPA 10x10
 const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -256,6 +262,10 @@ const modalScrollContent = document.getElementById('modalScrollContent');
 const modalContent = document.getElementById('modalContent');
 const adminScrollContent = document.getElementById('adminScrollContent');
 
+// Elementos do Joystick
+const joystickContainer = document.getElementById('joystick-container');
+const joystick = document.getElementById('joystick');
+
 
 // --- 3. LÓGICA DE MOVIMENTO E DESENHO ---
 
@@ -316,7 +326,6 @@ function drawMap() {
     drawPlayer(gameData.player.x, gameData.player.y, gameData.player.color);
 }
 
-// ATUALIZADO: Função de desenho do player (Pixel Art com animação e olhos de 2px)
 function drawPlayer(x, y, color) {
     const p = gameData.player;
     const bodySize = 15; 
@@ -516,12 +525,21 @@ function updateGame() {
 
 function updatePlayerMovement() {
     const player = gameData.player;
+    
+    // Reseta o isMoving se o movimento não estiver vindo do teclado ou toque
+    if (player.dx === 0 && player.dy === 0) {
+        isMoving = false;
+    } else {
+         isMoving = true;
+    }
+
     let newX = player.x + player.dx;
     let newY = player.y + player.dy;
 
     if (checkCollision(newX, newY, 1)) {
         player.dx = 0;
         player.dy = 0;
+        isMoving = false;
     } else {
         player.x = newX;
         player.y = newY;
@@ -930,7 +948,6 @@ function loadGame() {
         const loadedData = JSON.parse(savedData);
         
         // Correção de Bug: Garante que os objetos internos sejam reatribuídos para evitar referências
-        // a objetos não inicializados (principalmente para SEEDS_DATA)
         gameData = { 
             ...INITIAL_DATA, 
             ...loadedData,
@@ -954,7 +971,9 @@ function loadGame() {
         
         // Corrige a cor do player se ele tiver um pet Dragão (bug de pet)
         if (gameData.pet.name === 'Dragão') {
-             gameData.player.color = '#b22222';
+             gameData.player.color = PETS.dragon.color;
+        } else {
+             gameData.player.color = PETS.none.color;
         }
 
     }
@@ -999,7 +1018,6 @@ function selectTool(toolKey) {
 
 
 function openShopModal(type, title, itemsData) {
-    // ... (Mantém a lógica de abertura do modal de loja)
     modalTitle.textContent = title;
     modalScrollContent.innerHTML = '';
     
@@ -1071,9 +1089,9 @@ function buyEgg(eggKey, eggData) {
     gameData.pet = PETS[chosenPetKey]; 
 
     if (chosenPetKey === 'dragon') {
-        gameData.player.color = '#b22222';
+        gameData.player.color = PETS.dragon.color;
     } else {
-        gameData.player.color = '#606060'; 
+        gameData.player.color = PETS.none.color; 
     }
     
     alert(`Seu ${eggData.name} chocou um(a) ${gameData.pet.name}!`);
@@ -1081,7 +1099,126 @@ function buyEgg(eggKey, eggData) {
 }
 
 
-// --- 8. EVENT LISTENERS ---
+// --- 8. EVENT LISTENERS DE TECLADO ---
+
+document.addEventListener('keydown', (e) => {
+    keysPressed[e.key] = true;
+    updatePlayerDirectionFromKeys();
+});
+
+document.addEventListener('keyup', (e) => {
+    keysPressed[e.key] = false;
+    updatePlayerDirectionFromKeys();
+});
+
+function updatePlayerDirectionFromKeys() {
+    const player = gameData.player;
+    player.dx = 0;
+    player.dy = 0;
+
+    if (keysPressed['w'] || keysPressed['W']) { player.dy = -player.speed; }
+    if (keysPressed['s'] || keysPressed['S']) { player.dy = player.speed; }
+    if (keysPressed['a'] || keysPressed['A']) { player.dx = -player.speed; }
+    if (keysPressed['d'] || keysPressed['D']) { player.dx = player.speed; }
+    
+    if (player.dx !== 0 && player.dy !== 0) {
+        player.dx /= Math.sqrt(2);
+        player.dy /= Math.sqrt(2);
+    }
+    
+    isMoving = (player.dx !== 0 || player.dy !== 0);
+}
+
+// --- 9. EVENT LISTENERS DE TOQUE (JOYSTICK) ---
+
+joystickContainer.addEventListener('touchstart', handleTouchStart, false);
+document.addEventListener('touchmove', handleTouchMove, false);
+document.addEventListener('touchend', handleTouchEnd, false);
+
+function getTouchPos(e) {
+    const rect = joystickContainer.getBoundingClientRect();
+    return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    };
+}
+
+function handleTouchStart(e) {
+    if (activeTouchId !== null) return;
+    
+    const touch = e.changedTouches[0];
+    const pos = getTouchPos(touch);
+    
+    // Verifica se o toque está dentro da área do joystick
+    if (pos.x >= 0 && pos.x <= 150 && pos.y >= 0 && pos.y <= 150) {
+        activeTouchId = touch.identifier;
+        joystickStartX = pos.x;
+        joystickStartY = pos.y;
+        
+        // Move o joystick para o centro para começar o arrasto
+        joystick.style.left = '50%';
+        joystick.style.top = '50%';
+        joystick.style.transform = 'translate(-50%, -50%)';
+        
+        e.preventDefault(); 
+    }
+}
+
+function handleTouchMove(e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === activeTouchId) {
+            const containerRect = joystickContainer.getBoundingClientRect();
+            const touchX = touch.clientX - containerRect.left;
+            const touchY = touch.clientY - containerRect.top;
+
+            let deltaX = touchX - joystickStartX;
+            let deltaY = touchY - joystickStartY;
+            
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance > MAX_DISTANCE) {
+                const ratio = MAX_DISTANCE / distance;
+                deltaX *= ratio;
+                deltaY *= ratio;
+            }
+            
+            // Move o elemento visual do joystick
+            joystick.style.left = `${50 + (deltaX / 150 * 100)}%`;
+            joystick.style.top = `${50 + (deltaY / 150 * 100)}%`;
+            
+            // Atualiza o movimento do player
+            const speedFactor = gameData.player.speed / MAX_DISTANCE;
+            gameData.player.dx = deltaX * speedFactor;
+            gameData.player.dy = deltaY * speedFactor;
+            
+            isMoving = true;
+            break;
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+            activeTouchId = null;
+            
+            // Centraliza o joystick visualmente
+            joystick.style.left = '50%';
+            joystick.style.top = '50%';
+            joystick.style.transform = 'translate(-50%, -50%)';
+            
+            // Para o player
+            gameData.player.dx = 0;
+            gameData.player.dy = 0;
+            isMoving = false;
+            break;
+        }
+    }
+}
+
+
+// --- 10. EVENT LISTENERS DIVERSOS ---
 
 canvas.addEventListener('click', (event) => {
     if (gameData.currentScene === 'garden') {
@@ -1188,33 +1325,6 @@ function openPlantingModal(plotIndex) {
     shopInteractionModal.style.display = 'block';
 }
 
-
-document.addEventListener('keydown', (e) => {
-    keysPressed[e.key] = true;
-    updatePlayerDirection();
-});
-
-document.addEventListener('keyup', (e) => {
-    keysPressed[e.key] = false;
-    updatePlayerDirection();
-});
-
-function updatePlayerDirection() {
-    const player = gameData.player;
-    player.dx = 0;
-    player.dy = 0;
-    isMoving = false;
-
-    if (keysPressed['w'] || keysPressed['W']) { player.dy = -player.speed; isMoving = true; }
-    if (keysPressed['s'] || keysPressed['S']) { player.dy = player.speed; isMoving = true; }
-    if (keysPressed['a'] || keysPressed['A']) { player.dx = -player.speed; isMoving = true; }
-    if (keysPressed['d'] || keysPressed['D']) { player.dx = player.speed; isMoving = true; }
-    
-    if (player.dx !== 0 && player.dy !== 0) {
-        player.dx /= Math.sqrt(2);
-        player.dy /= Math.sqrt(2);
-    }
-}
 
 sceneChanger.addEventListener('click', () => {
     if (gameData.currentScene === 'garden') {
