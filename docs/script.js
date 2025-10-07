@@ -536,14 +536,28 @@ function updatePlayerMovement() {
     let newX = player.x + player.dx;
     let newY = player.y + player.dy;
 
-    if (checkCollision(newX, newY, 1)) {
+    // Colisão no modo Mapa
+    if (gameData.currentScene === 'map' && checkCollision(newX, newY, 1)) {
         player.dx = 0;
         player.dy = 0;
         isMoving = false;
-    } else {
-        player.x = newX;
-        player.y = newY;
+    } 
+    // Colisão no modo Jardim (sempre centraliza no canvas, sem colisão com tiles, mas com borda)
+    else if (gameData.currentScene === 'garden') {
+        const { width: gardenW, height: gardenH } = getCurrentGardenDimensions();
+        const { offsetX, offsetY } = getGardenOffset();
+
+        const minX = offsetX - TILE_SIZE + PLAYER_SIZE / 2;
+        const maxX = offsetX + gardenW * TILE_SIZE + TILE_SIZE - PLAYER_SIZE * 1.5;
+        const minY = offsetY - TILE_SIZE + PLAYER_SIZE / 2;
+        const maxY = offsetY + gardenH * TILE_SIZE + TILE_SIZE - PLAYER_SIZE * 1.5;
+
+        newX = Math.max(minX, Math.min(maxX, newX));
+        newY = Math.max(minY, Math.min(maxY, newY));
     }
+    
+    player.x = newX;
+    player.y = newY;
 }
 
 function checkCollision(x, y, tileType) {
@@ -1150,10 +1164,12 @@ function handleTouchStart(e) {
     const pos = getTouchPos(touch);
     
     // Verifica se o toque está dentro da área do joystick
+    // O container do joystick tem 150x150
     if (pos.x >= 0 && pos.x <= 150 && pos.y >= 0 && pos.y <= 150) {
         activeTouchId = touch.identifier;
-        joystickStartX = pos.x;
-        joystickStartY = pos.y;
+        // O ponto de início do toque é usado como centro de referência
+        joystickStartX = 75; 
+        joystickStartY = 75;
         
         // Move o joystick para o centro para começar o arrasto
         joystick.style.left = '50%';
@@ -1169,6 +1185,7 @@ function handleTouchMove(e) {
         const touch = e.changedTouches[i];
         if (touch.identifier === activeTouchId) {
             const containerRect = joystickContainer.getBoundingClientRect();
+            // Calcula a posição do toque relativa ao centro do container (75, 75)
             const touchX = touch.clientX - containerRect.left;
             const touchY = touch.clientY - containerRect.top;
 
@@ -1184,8 +1201,11 @@ function handleTouchMove(e) {
             }
             
             // Move o elemento visual do joystick
-            joystick.style.left = `${50 + (deltaX / 150 * 100)}%`;
-            joystick.style.top = `${50 + (deltaY / 150 * 100)}%`;
+            // O centro do container é 75. 
+            // O joystick.style.left/top é relativo ao container.
+            joystick.style.left = `${75 + deltaX}px`;
+            joystick.style.top = `${75 + deltaY}px`;
+            joystick.style.transform = 'translate(-50%, -50%)'; // Mantém o centro do joystick no ponto de arrasto
             
             // Atualiza o movimento do player
             const speedFactor = gameData.player.speed / MAX_DISTANCE;
@@ -1218,22 +1238,59 @@ function handleTouchEnd(e) {
 }
 
 
-// --- 10. EVENT LISTENERS DIVERSOS ---
+// --- 10. EVENT LISTENERS DIVERSOS (CORRIGIDOS) ---
 
+// --- FUNÇÕES DE INTERAÇÃO DO MAPA ---
 canvas.addEventListener('click', (event) => {
-    if (gameData.currentScene === 'garden') {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
 
+    if (gameData.currentScene === 'map') {
+        const gridX = Math.floor(clickX / TILE_SIZE);
+        const gridY = Math.floor(clickY / TILE_SIZE);
+        
+        let shouldTeleport = false;
+
+        // Verifica a colisão do Player com o Tile Clicado (para evitar abrir longe)
+        const playerGridX = Math.floor((gameData.player.x + PLAYER_SIZE/2) / TILE_SIZE);
+        const playerGridY = Math.floor((gameData.player.y + PLAYER_SIZE/2) / TILE_SIZE);
+        
+        // Se o player estiver no tile ou adjacente ao tile, permite a interação
+        const isNear = Math.abs(gridX - playerGridX) <= 1 && Math.abs(gridY - playerGridY) <= 1;
+
+        if (!isNear) return; // Não interage se estiver longe
+
+        const tileType = GAME_MAP[gridY][gridX];
+
+        if (tileType === 2) { // Jardim (Teleporta)
+            gameData.currentScene = 'garden';
+            // Reposiciona o player no centro superior do jardim
+            gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+            gameData.player.y = TILE_SIZE;
+            shouldTeleport = true;
+        } else if (tileType === 3) { // Vender
+            openSellModal();
+        } else if (tileType === 4) { // Sementes
+            openShopModal('seeds', 'Loja de Sementes', SEEDS_DATA);
+        } else if (tileType === 5) { // Equipamentos/Gear
+            openShopModal('gear', 'Loja de Equipamentos', GEAR);
+        } else if (tileType === 6) { // Ovos/Pet
+            openShopModal('eggs', 'Loja de Ovos/Pets', EGGS);
+        }
+        
+        if (shouldTeleport) {
+            saveGame();
+            return;
+        }
+    } 
+    // Interação com o Jardim (Expansão e Plots)
+    else if (gameData.currentScene === 'garden') {
         const { offsetX, offsetY } = getGardenOffset();
         const { width, height } = getCurrentGardenDimensions();
         
-        const gridX = Math.floor((x - offsetX) / TILE_SIZE);
-        const gridY = Math.floor((y - offsetY) / TILE_SIZE);
-        
-        const plotIndex = getPlotIndex(gridX, gridY, width);
-        const plot = gameData.plots[plotIndex];
+        const gridX = Math.floor((clickX - offsetX) / TILE_SIZE);
+        const gridY = Math.floor((clickY - offsetY) / TILE_SIZE);
         
         // 1. Interação com as Placas de Expansão
         
@@ -1241,8 +1298,8 @@ canvas.addEventListener('click', (event) => {
         const plateX = offsetX + width * TILE_SIZE;
         const plateY = offsetY + height * TILE_SIZE / 2 - TILE_SIZE / 2;
         if (gameData.gardenExpansion.x < MAX_EXPANSION && 
-            x >= plateX && x < plateX + TILE_SIZE && 
-            y >= plateY && y < plateY + TILE_SIZE) 
+            clickX >= plateX && clickX < plateX + TILE_SIZE && 
+            clickY >= plateY && clickY < plateY + TILE_SIZE) 
         {
             buyExpansion('x');
             return;
@@ -1252,8 +1309,8 @@ canvas.addEventListener('click', (event) => {
         const plateY_Y = offsetY + height * TILE_SIZE;
         const plateX_Y = offsetX + width * TILE_SIZE / 2 - TILE_SIZE / 2;
         if (gameData.gardenExpansion.y < MAX_EXPANSION &&
-            x >= plateX_Y && x < plateX_Y + TILE_SIZE &&
-            y >= plateY_Y && y < plateY_Y + TILE_SIZE) 
+            clickX >= plateX_Y && clickX < plateX_Y + TILE_SIZE &&
+            clickY >= plateY_Y && clickY < plateY_Y + TILE_SIZE) 
         {
             buyExpansion('y');
             return;
@@ -1261,6 +1318,9 @@ canvas.addEventListener('click', (event) => {
         
         // 2. Interação com os Plots
         if (gridX >= 0 && gridX < width && gridY >= 0 && gridY < height) {
+            
+            const plotIndex = getPlotIndex(gridX, gridY, width);
+            const plot = gameData.plots[plotIndex];
             
             let targetPlotIndex = plotIndex;
 
@@ -1325,21 +1385,177 @@ function openPlantingModal(plotIndex) {
     shopInteractionModal.style.display = 'block';
 }
 
+function openSellModal() {
+    modalTitle.textContent = 'Vender Colheitas';
+    modalScrollContent.innerHTML = '';
+    modalContent.innerHTML = '';
+    let hasItemsToSell = false;
+
+    for (const key in gameData.harvestInventory) {
+        const count = gameData.harvestInventory[key];
+        if (count > 0) {
+            hasItemsToSell = true;
+            const seed = SEEDS_DATA[key];
+            const sellValue = seed.sellValue * gameData.pet.bonus;
+            
+            const itemElement = document.createElement('div');
+            itemElement.className = 'shop-item';
+            itemElement.innerHTML = `
+                <h4>${seed.name}</h4>
+                <p>Você tem: ${count} | Vende por: ${sellValue.toFixed(2)}¢ (por unidade)</p>
+                <button onclick="sellItem('${key}', 1)">Vender 1</button>
+                <button onclick="sellItem('${key}', ${count})">Vender Todos</button>
+            `;
+            modalScrollContent.appendChild(itemElement);
+        }
+    }
+    
+    if (!hasItemsToSell) {
+        modalScrollContent.innerHTML = '<p>Você não tem colheitas para vender.</p>';
+    }
+
+    modalContent.innerHTML += `
+        <button id="sellAllButton" onclick="sellAll()">Vender TUDO (Total)</button>
+    `;
+
+    shopInteractionModal.style.display = 'block';
+}
+
+function sellItem(key, count) {
+    const seed = SEEDS_DATA[key];
+    const sellValue = seed.sellValue * gameData.pet.bonus;
+    
+    const amountToSell = Math.min(count, gameData.harvestInventory[key] || 0);
+    const totalEarnings = Math.round(amountToSell * sellValue);
+
+    if (amountToSell > 0) {
+        gameData.money += totalEarnings;
+        gameData.harvestInventory[key] -= amountToSell;
+        
+        if (gameData.harvestInventory[key] <= 0) {
+            delete gameData.harvestInventory[key];
+        }
+        
+        alert(`Você vendeu ${amountToSell} ${seed.name} por ${totalEarnings.toFixed(2)}¢!`);
+    }
+
+    saveGame();
+    openSellModal(); 
+}
+
+function sellAll() {
+    let totalEarnings = 0;
+    for (const key in gameData.harvestInventory) {
+        const count = gameData.harvestInventory[key] || 0;
+        if (count > 0) {
+            const seed = SEEDS_DATA[key];
+            const sellValue = seed.sellValue * gameData.pet.bonus;
+            totalEarnings += Math.round(count * sellValue);
+        }
+    }
+    
+    gameData.money += totalEarnings;
+    gameData.harvestInventory = {}; // Limpa todo o inventário de colheitas
+    
+    alert(`Você vendeu TUDO e ganhou ${totalEarnings.toFixed(2)}¢!`);
+
+    saveGame();
+    closeModal();
+}
+
+function openAdminPanel() {
+    adminPanel.style.display = 'block';
+    adminScrollContent.innerHTML = `
+        <p>Dinheiro: <input type="number" id="adminMoney" value="${gameData.money.toFixed(2)}"></p>
+        <button onclick="adminSetMoney()">Setar Dinheiro</button>
+        <hr>
+        <h4>Sementes</h4>
+        ${Object.keys(SEEDS_DATA).map(key => `
+            <p>${SEEDS_DATA[key].name}: <input type="number" id="adminSeed_${key}" value="${gameData.seeds[key].count}">
+            <button onclick="adminSetCount('seeds', '${key}')">Setar</button></p>
+        `).join('')}
+        <hr>
+        <h4>Equipamentos</h4>
+        ${Object.keys(GEAR).map(key => `
+            <p>${GEAR[key].name}: <input type="number" id="adminGear_${key}" value="${gameData.inventory[key] || 0}">
+            <button onclick="adminSetCount('gear', '${key}')">Setar</button></p>
+        `).join('')}
+        <hr>
+        <button onclick="resetGame()">RESETAR JOGO (CUIDADO!)</button>
+    `;
+}
+
+closeAdminPanelButton.addEventListener('click', () => {
+    adminPanel.style.display = 'none';
+});
+
+function adminSetMoney() {
+    const newMoney = parseFloat(document.getElementById('adminMoney').value);
+    if (!isNaN(newMoney)) {
+        gameData.money = newMoney;
+        saveGame();
+        alert(`Dinheiro definido para ${newMoney.toFixed(2)}¢`);
+        updateUI();
+    }
+}
+
+function adminSetCount(type, key) {
+    const input = document.getElementById(`admin${type === 'seeds' ? 'Seed' : 'Gear'}_${key}`);
+    const newCount = parseInt(input.value);
+    
+    if (!isNaN(newCount)) {
+        if (type === 'seeds') {
+            gameData.seeds[key].count = newCount;
+        } else if (type === 'gear') {
+            gameData.inventory[key] = newCount;
+        }
+        saveGame();
+        alert(`${GEAR[key]?.name || SEEDS_DATA[key]?.name} definido para ${newCount}`);
+        updateUI();
+        openAdminPanel(); // Atualiza o painel
+    }
+}
+
+function resetGame() {
+    if (confirm("TEM CERTEZA? Todo o progresso será perdido!")) {
+        localStorage.removeItem(SAVE_KEY);
+        window.location.reload();
+    }
+}
+
+
+// --- LISTENERS DE BOTÕES FORA DO CANVAS ---
 
 sceneChanger.addEventListener('click', () => {
     if (gameData.currentScene === 'garden') {
         gameData.currentScene = 'map';
+        // Reposiciona o player no mapa (Tile 1, 8)
         gameData.player.x = 1 * TILE_SIZE; 
         gameData.player.y = 8 * TILE_SIZE;
         gameData.selectedItem = 'none'; // Deseleciona a ferramenta ao sair do jardim
         saveGame();
+    } else if (gameData.currentScene === 'map') {
+        alert("Aproxime-se do tile 'JARDIM' no mapa (o tile verde-escuro) e clique nele para entrar.");
+    }
+});
+
+adminButtonMap.addEventListener('click', () => {
+    const password = prompt("Digite a senha de administrador:");
+    if (password === ADMIN_PASSWORD) {
+        openAdminPanel();
+    } else {
+        alert("Senha incorreta.");
     }
 });
 
 closeModalButton.addEventListener('click', closeModal);
 
-// Botões do Garden (Water/Harvest All)
+// Botões Globais do Garden (Water/Harvest All)
 harvestAllButton.addEventListener('click', () => {
+    if (gameData.currentScene !== 'garden') {
+        alert("Você precisa estar no jardim para colher tudo!");
+        return;
+    }
     let harvested = 0;
     for (let i = 0; i < gameData.plots.length; i++) {
         if (gameData.plots[i].isPlanted && gameData.plots[i].growthStage >= 100 && gameData.plots[i].isMaster) {
@@ -1355,6 +1571,10 @@ harvestAllButton.addEventListener('click', () => {
 });
 
 waterButton.addEventListener('click', () => {
+    if (gameData.currentScene !== 'garden') {
+        alert("Você precisa estar no jardim para regar!");
+        return;
+    }
     let watered = 0;
     for (let i = 0; i < gameData.plots.length; i++) {
         const plot = gameData.plots[i];
@@ -1376,6 +1596,4 @@ loadGame();
 gameLoop();
 
 // Intervalo para sprinklers (a cada 3 segundos)
-setInterval(sprinklerTick, 3000); 
-
-// O restante das funções de Admin (adminButtonMap, etc.) permanecem as mesmas
+setInterval(sprinklerTick, 3000);
