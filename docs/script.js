@@ -440,6 +440,7 @@ function tryPlant() {
 function plantSeedAndCloseModal(plotIndex, seedKey) {
     plantSeed(plotIndex, seedKey);
     if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+    stopPlayer(); // Adicionado para garantir que o movimento trave ao fechar
 }
 
 
@@ -695,6 +696,7 @@ function buyAndHatchEgg(eggKey) {
         alert(`Parabéns! Você chocou um(a) ${newPet.name} com bônus x${newPet.bonus.toFixed(2)}!`);
         
         if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+        stopPlayer(); // Adicionado para garantir que o movimento trave ao fechar
         saveGame();
     }
     updateStats();
@@ -752,6 +754,9 @@ function sellItems() {
 
 // Função que abre o modal (CRÍTICO: Injeta no modalContent)
 function openModal(title, contentHTML) {
+    // CRÍTICO: Parar o jogador ao abrir o modal
+    stopPlayer(); 
+    
     if (modalTitle) modalTitle.textContent = title;
     
     if (modalContent) modalContent.innerHTML = contentHTML; 
@@ -834,12 +839,13 @@ function executeAdminCommand(command) {
 }
 
 
-// --- 7. LISTENERS ---
+// --- 7. LISTENERS (CORRIGIDOS) ---
 
 // Fechar Modal Geral
 if (closeModalButton) {
     closeModalButton.addEventListener('click', () => {
         if (shopInteractionModal) shopInteractionModal.style.display = 'none';
+        stopPlayer(); // CRÍTICO: Garante que o movimento possa ser retomado.
     });
 }
 
@@ -847,6 +853,7 @@ if (closeModalButton) {
 if (closeAdminPanelButton) {
     closeAdminPanelButton.addEventListener('click', () => {
         if (adminPanel) adminPanel.style.display = 'none';
+        stopPlayer(); // CRÍTICO: Garante que o movimento possa ser retomado.
     });
 }
 
@@ -915,10 +922,12 @@ if (adminButtonMap) {
         if (adminPanel) {
             if (adminPanel.style.display === 'block') {
                  adminPanel.style.display = 'none'; 
+                 stopPlayer(); // Garante que o movimento pare se for fechado por esse botão
             } else {
                 const enteredPassword = prompt("Digite a senha de administrador:");
                 if (enteredPassword === ADMIN_PASSWORD) {
                     adminPanel.style.display = 'block';
+                    stopPlayer(); // Para o jogador ao abrir
                     
                     if (adminScrollContent) {
                         adminScrollContent.innerHTML = `
@@ -1057,4 +1066,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-}
+            }
