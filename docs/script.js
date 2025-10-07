@@ -14,11 +14,11 @@ const GARDEN_HEIGHT = 4;
 // CHAVE DE SALVAMENTO
 const SAVE_KEY = "GrowAGardenSave"; 
 const ADMIN_PASSWORD = "ArthurSigmaBoy123"; 
+const RESTOCK_INTERVAL = 3 * 60 * 1000; // 3 minutos em milissegundos
 
 let isMoving = false;
-let moveDirection = 'none';
-// Variáveis para controle de movimento do jogador pelo teclado
 let keysPressed = {}; 
+let lastRestockTime = Date.now(); 
 
 // MAPA 10x10
 const GAME_MAP = [
@@ -34,49 +34,66 @@ const GAME_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-// DADOS DOS ITENS E RARIDADES
+// --- PETS ATUALIZADOS COM HABILIDADES ESPECIAIS ---
 const PETS = { 
-    none: { name: 'Nenhum', bonus: 1.0, color: '#606060' }, 
-    bunny: { name: 'Coelho', bonus: 1.1, color: '#f5f5dc' }, 
-    fox: { name: 'Raposa', bonus: 1.25, color: '#ff4500' },
-    dragon: { name: 'Dragão', bonus: 1.5, color: '#b22222' } 
+    none: { name: 'Nenhum', bonus: 1.0, ability: 'none', color: '#606060', chance: 0 }, 
+    bunny: { name: 'Coelho', bonus: 1.1, ability: 'harvest', color: '#f5f5dc', chance: 0.50 }, 
+    fox: { name: 'Raposa', bonus: 1.25, ability: 'harvest', color: '#ff4500', chance: 0.30 },
+    dragon: { name: 'Dragão', bonus: 1.5, ability: 'harvest', color: '#b22222', chance: 0.10 },
+    goldenLab: { name: 'Lab. Dourado', bonus: 1.0, ability: 'mutation_boost', color: '#ffd700', chance: 0.08 },
+    phoenix: { name: 'Fênix', bonus: 1.0, ability: 'water_time', color: '#ff4500', chance: 0.02 }
 };
+
+// --- EGGS ATUALIZADOS COM CHANCES DE PETS ---
 const EGGS = { 
-    commonEgg: { name: 'Ovo Comum', cost: 1000, color: '#f0e68c', pets: ['bunny'], chance: [1.0] }, 
-    rareEgg: { name: 'Ovo Raro', cost: 5000, color: '#00ced1', pets: ['bunny', 'fox'], chance: [0.7, 0.3] },
-    legendaryEgg: { name: 'Ovo Lendário', cost: 25000, color: '#ffd700', pets: ['fox', 'dragon'], chance: [0.5, 0.5] }
+    commonEgg: { name: 'Ovo Comum', cost: 1000, color: '#f0e68c', maxStock: 5, currentStock: 5, 
+        pets: ['bunny', 'fox', 'dragon', 'goldenLab', 'phoenix'], 
+        chance: [0.70, 0.20, 0.07, 0.02, 0.01], 
+        restockChance: 1.0 
+    }, 
+    rareEgg: { name: 'Ovo Raro', cost: 5000, color: '#00ced1', maxStock: 3, currentStock: 3,
+        pets: ['fox', 'dragon', 'goldenLab', 'phoenix'], 
+        chance: [0.40, 0.30, 0.20, 0.10], 
+        restockChance: 0.7 
+    },
+    legendaryEgg: { name: 'Ovo Lendário', cost: 25000, color: '#ffd700', maxStock: 1, currentStock: 1,
+        pets: ['dragon', 'goldenLab', 'phoenix'], 
+        chance: [0.35, 0.40, 0.25], 
+        restockChance: 0.3 
+    }
 };
+
+// --- GEAR ATUALIZADOS COM STOCK E CHANCES ---
 const GEAR = { 
-    basicSprinkler: { name: 'Sprinkler Básico', cost: 500, description: "30% chance de regar auto" }, 
-    proSprinkler: { name: 'Sprinkler Pro', cost: 2000, description: "60% chance de regar auto" },
-    wateringCan: { name: 'Regador Básico', cost: 100, description: "Item para regar suas plantas" }
+    basicSprinkler: { name: 'Sprinkler Básico', cost: 500, description: "30% chance de regar auto", maxStock: 5, currentStock: 5, restockChance: 1.0 }, 
+    proSprinkler: { name: 'Sprinkler Pro', cost: 2000, description: "60% chance de regar auto", maxStock: 2, currentStock: 2, restockChance: 0.5 },
+    wateringCan: { name: 'Regador Básico', cost: 100, description: "Item para regar suas plantas", maxStock: 10, currentStock: 10, restockChance: 1.0 }
 };
 
-// --- SEMENTES ATUALIZADAS (Com 5 novas e raridades ajustadas) ---
+// --- SEMENTES ATUALIZADAS (Com STOCK e CHANCES DE RESTOCK) ---
 const SEEDS_DATA = {
-    // Comuns
-    carrot: { name: 'Cenoura Comum', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, color: '#ff9800', type: 'single', harvestColor: '#ff9800', rarity: 'common' },
-    pumpkin: { name: 'Abóbora Comum', cost: 150, sellValue: 300, growTime: 20, count: 0, maxStock: 5, currentStock: 5, color: '#ff5722', type: 'single', harvestColor: '#ff5722', rarity: 'common' },
+    // Comuns (Restock Garantido)
+    carrot: { name: 'Cenoura Comum', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, color: '#ff9800', type: 'single', harvestColor: '#ff9800', rarity: 'common', restockChance: 1.0 },
+    pumpkin: { name: 'Abóbora Comum', cost: 150, sellValue: 300, growTime: 20, count: 0, maxStock: 5, currentStock: 5, color: '#ff5722', type: 'single', harvestColor: '#ff5722', rarity: 'common', restockChance: 1.0 },
     
-    // Raras
-    blueBerry: { name: 'Mirtilo Raro', cost: 400, sellValue: 800, growTime: 15, count: 0, maxStock: 4, currentStock: 4, color: '#4169e1', type: 'multi', harvestColor: '#4169e1', rarity: 'rare' },
-    moonFlower: { name: 'Flor Lunar Rara', cost: 800, sellValue: 1800, growTime: 25, count: 0, maxStock: 2, currentStock: 2, color: '#e0ffff', type: 'single', harvestColor: '#e0ffff', rarity: 'rare' },
+    // Raras (Chance de 80%)
+    blueBerry: { name: 'Mirtilo Raro', cost: 400, sellValue: 800, growTime: 15, count: 0, maxStock: 4, currentStock: 4, color: '#4169e1', type: 'multi', harvestColor: '#4169e1', rarity: 'rare', restockChance: 0.8 },
+    moonFlower: { name: 'Flor Lunar Rara', cost: 800, sellValue: 1800, growTime: 25, count: 0, maxStock: 2, currentStock: 2, color: '#e0ffff', type: 'single', harvestColor: '#e0ffff', rarity: 'rare', restockChance: 0.8 },
     
-    // Épicas
-    goldenMelon: { name: 'Melancia Dourada', cost: 2000, sellValue: 5000, growTime: 40, count: 0, maxStock: 1, currentStock: 1, color: '#ffd700', type: 'single', harvestColor: '#ffd700', rarity: 'epic' },
-    starFruit: { name: 'Carambola Estelar', cost: 1500, sellValue: 3500, growTime: 35, count: 0, maxStock: 1, currentStock: 1, color: '#fdfd96', type: 'multi', harvestColor: '#fdfd96', rarity: 'epic' },
+    // Épicas (Chance de 50%)
+    goldenMelon: { name: 'Melancia Dourada', cost: 2000, sellValue: 5000, growTime: 40, count: 0, maxStock: 1, currentStock: 1, color: '#ffd700', type: 'single', harvestColor: '#ffd700', rarity: 'epic', restockChance: 0.5 },
+    starFruit: { name: 'Carambola Estelar', cost: 1500, sellValue: 3500, growTime: 35, count: 0, maxStock: 1, currentStock: 1, color: '#fdfd96', type: 'multi', harvestColor: '#fdfd96', rarity: 'epic', restockChance: 0.5 },
 
-    // --- NOVAS LENDÁRIAS / ACIMA ---
-    // Lendárias
-    shadowBloom: { name: 'Flor Sombra', cost: 5000, sellValue: 12000, growTime: 60, count: 0, maxStock: 1, currentStock: 1, color: '#301934', type: 'single', harvestColor: '#301934', rarity: 'legendary' },
-    crystalGrape: { name: 'Uva de Cristal', cost: 7500, sellValue: 18000, growTime: 70, count: 0, maxStock: 1, currentStock: 1, color: '#e6e6fa', type: 'multi', harvestColor: '#e6e6fa', rarity: 'legendary' },
+    // Lendárias (Chance de 30%)
+    shadowBloom: { name: 'Flor Sombra', cost: 5000, sellValue: 12000, growTime: 60, count: 0, maxStock: 1, currentStock: 1, color: '#301934', type: 'single', harvestColor: '#301934', rarity: 'legendary', restockChance: 0.3 },
+    crystalGrape: { name: 'Uva de Cristal', cost: 7500, sellValue: 18000, growTime: 70, count: 0, maxStock: 1, currentStock: 1, color: '#e6e6fa', type: 'multi', harvestColor: '#e6e6fa', rarity: 'legendary', restockChance: 0.3 },
 
-    // Míticas
-    solarMango: { name: 'Manga Solar', cost: 15000, sellValue: 35000, growTime: 90, count: 0, maxStock: 1, currentStock: 1, color: '#ff8c00', type: 'single', harvestColor: '#ff8c00', rarity: 'mythic' },
-    voidApple: { name: 'Maçã do Vazio', cost: 20000, sellValue: 50000, growTime: 120, count: 0, maxStock: 1, currentStock: 1, color: '#000000', type: 'single', harvestColor: '#000000', rarity: 'mythic' },
+    // Míticas (Chance de 10%)
+    solarMango: { name: 'Manga Solar', cost: 15000, sellValue: 35000, growTime: 90, count: 0, maxStock: 1, currentStock: 1, color: '#ff8c00', type: 'single', harvestColor: '#ff8c00', rarity: 'mythic', restockChance: 0.1 },
+    voidApple: { name: 'Maçã do Vazio', cost: 20000, sellValue: 50000, growTime: 120, count: 0, maxStock: 1, currentStock: 1, color: '#000000', type: 'single', harvestColor: '#000000', rarity: 'mythic', restockChance: 0.1 },
     
-    // Mítica Suprema
-    cosmicDust: { name: 'Poeira Cósmica', cost: 50000, sellValue: 150000, growTime: 180, count: 0, maxStock: 1, currentStock: 1, color: '#8a2be2', type: 'multi', harvestColor: '#8a2be2', rarity: 'supreme' },
+    // Mítica Suprema (Chance de 5%)
+    cosmicDust: { name: 'Poeira Cósmica', cost: 50000, sellValue: 150000, growTime: 180, count: 0, maxStock: 1, currentStock: 1, color: '#8a2be2', type: 'multi', harvestColor: '#8a2be2', rarity: 'supreme', restockChance: 0.05 },
 };
 
 // Dados iniciais
@@ -99,7 +116,7 @@ const INITIAL_DATA = {
 for (let y = 0; y < GARDEN_HEIGHT; y++) {
     for (let x = 0; x < GARDEN_WIDTH; x++) {
         INITIAL_DATA.plots.push({
-            gridX: x, gridY: y, isPlanted: false, seedType: null, growthStart: 0, growthStage: 0, isMutated: false, isWatered: false
+            gridX: x, gridY: y, isPlanted: false, seedType: null, growthStart: 0, growthStage: 0, isMutated: false, isWatered: false, waterStages: 1 // Novo campo para controle de rega
         });
     }
 }
@@ -189,7 +206,8 @@ function drawGarden() {
         ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
 
         // 2. Desenhar status (Água)
-        if (plot.isWatered) {
+        // Se a plot.waterStages > 0, significa que está regada.
+        if (plot.waterStages > 0) {
             ctx.fillStyle = 'rgba(0, 191, 255, 0.4)';
             ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
         }
@@ -208,10 +226,16 @@ function drawGarden() {
 
             // 4. Desenhar Fruto (Se estiver pronto)
             if (plot.growthStage >= maxStages) {
-                ctx.fillStyle = seed.harvestColor;
-                ctx.beginPath();
-                ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 4, 0, Math.PI * 2);
-                ctx.fill();
+                // Se a imagem da fruta pronta estiver disponível (URL)
+                // Implementação futura:
+                // if (seed.imageURL) {
+                //     ctx.drawImage(seed.image, x + TILE_SIZE / 4, y + TILE_SIZE / 4, TILE_SIZE / 2, TILE_SIZE / 2);
+                // } else { 
+                    ctx.fillStyle = seed.harvestColor;
+                    ctx.beginPath();
+                    ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                // }
                 
                 // Mutações (Visual)
                 if (plot.isMutated) {
@@ -349,10 +373,16 @@ function handleInput() {
 
 function waterPlot(index) {
     const plot = gameData.plots[index];
-    if (plot.isPlanted && !plot.isWatered) {
-        plot.isWatered = true;
-        saveGame();
+    if (!plot.isPlanted || plot.waterStages > 0) return; 
+
+    // Define quantas etapas de crescimento a rega durará
+    if (gameData.pet.ability === 'water_time') {
+        plot.waterStages = 2; // Fênix: Dura 2 estágios
+    } else {
+        plot.waterStages = 1; // Padrão: Dura 1 estágio
     }
+    plot.isWatered = true; // Mantido para lógica de crescimento imediato (offline)
+    saveGame();
 }
 
 function harvestPlot(index) {
@@ -367,8 +397,10 @@ function harvestPlot(index) {
     if (plot.growthStage >= maxStages) {
         let harvestAmount = seed.type === 'multi' ? 3 : 1; 
         
-        // Aplica Bônus de Pet
-        harvestAmount = Math.ceil(harvestAmount * gameData.pet.bonus);
+        // Aplica Bônus de Pet (Apenas pets com habilidade 'harvest' dão bônus)
+        if (gameData.pet.ability === 'harvest') {
+            harvestAmount = Math.ceil(harvestAmount * gameData.pet.bonus);
+        }
         
         // Bônus de Mutação (10% extra)
         if (plot.isMutated) {
@@ -385,6 +417,7 @@ function harvestPlot(index) {
         }
         plot.growthStart = Date.now();
         plot.growthStage = 0;
+        plot.waterStages = 0;
         plot.isWatered = false;
         plot.isMutated = false;
 
@@ -403,8 +436,18 @@ function plantSeed(index, seedKey) {
         plot.seedType = seedKey;
         plot.growthStart = Date.now();
         plot.growthStage = 0;
+        plot.waterStages = 0;
         plot.isWatered = false;
-        plot.isMutated = Math.random() < 0.05; // 5% de chance de mutação
+        
+        // Chance de mutação base
+        let mutationChance = 0.05; 
+        // Bônus de Pet para mutação
+        if (gameData.pet.ability === 'mutation_boost') {
+            mutationChance += 0.20; // +20% para o Labrador Dourado
+        }
+        
+        plot.isMutated = Math.random() < mutationChance; 
+        
         seed.count -= 1;
         saveGame();
         return true;
@@ -449,6 +492,7 @@ function plantSeedAndCloseModal(plotIndex, seedKey) {
 function saveGame() {
     try {
         gameData.lastSaveTime = Date.now(); 
+        gameData.lastRestockTime = lastRestockTime; // Salva o tempo da última reposição
         const dataToSave = JSON.stringify(gameData);
         localStorage.setItem(SAVE_KEY, dataToSave);
     } catch (e) {
@@ -462,39 +506,52 @@ function loadGame() {
         if (savedData) {
             const loadedData = JSON.parse(savedData);
             
-            // 1. Mescla Sementes: Adiciona sementes novas ao save antigo
-            const mergedSeeds = JSON.parse(JSON.stringify(SEEDS_DATA)); 
-            if (loadedData.seeds) {
-                for (const key in loadedData.seeds) {
-                    if (mergedSeeds[key]) {
-                        // Copia apenas o count e o currentStock, mantendo o growTime/cost atualizado do SEEDS_DATA
-                        mergedSeeds[key].count = loadedData.seeds[key].count;
-                        mergedSeeds[key].currentStock = loadedData.seeds[key].currentStock;
+            // 1. Mescla Dados Iniciais
+            gameData = { ...INITIAL_DATA, ...loadedData }; 
+            
+            // 2. Mescla Sementes/Gear/Eggs (mantém count/stock se existirem, senão usa padrão)
+            const mergeData = (target, sourceData) => {
+                const merged = JSON.parse(JSON.stringify(sourceData)); 
+                if (target) {
+                    for (const key in target) {
+                        if (merged[key]) {
+                            // Copia count (inventário do jogador) e currentStock (estoque da loja)
+                            merged[key].count = target[key].count || 0; 
+                            merged[key].currentStock = target[key].currentStock || merged[key].maxStock; 
+                        }
                     }
                 }
-            }
+                return merged;
+            };
+
+            gameData.seeds = mergeData(loadedData.seeds, SEEDS_DATA);
+            gameData.inventory = { ...INITIAL_DATA.inventory, ...loadedData.inventory };
             
-            // 2. Mescla Inventário de Colheita: Garante que todas as chaves (incluindo as novas) existam
+            // Tratamento de Eggs (especial, pois não tem count, só stock)
+            gameData.eggs = mergeData(loadedData.eggs, EGGS);
+            // Corrige o bug de eggs estarem no seeds, se for um save antigo
+            if(!gameData.eggs.commonEgg) gameData.eggs = JSON.parse(JSON.stringify(EGGS)); 
+
+            // 3. Mescla Inventário de Colheita
             const mergedHarvestInventory = { ...loadedData.harvestInventory };
             for (const key in SEEDS_DATA) {
                 if (mergedHarvestInventory[key] === undefined) {
                     mergedHarvestInventory[key] = 0; 
                 }
             }
-            
-            // 3. Mescla Inventário de Equipamentos
-            const mergedInventory = { ...INITIAL_DATA.inventory, ...loadedData.inventory };
-
-            // Sobrescreve gameData com os dados carregados e mesclados
-            gameData = { ...INITIAL_DATA, ...loadedData }; 
-            gameData.seeds = mergedSeeds;
             gameData.harvestInventory = mergedHarvestInventory;
-            gameData.inventory = mergedInventory;
-
-            // Recalcula o tempo offline (se houver)
+            
+            // 4. Carrega o Pet (usando dados atualizados)
+            gameData.pet = PETS[loadedData.pet.name] || PETS.none;
+            
+            // 5. Carrega o tempo de última reposição
+            lastRestockTime = loadedData.lastRestockTime || Date.now();
+            
+            // 6. Recalcula o tempo offline
             if (gameData.lastSaveTime) {
                 const timeOfflineSeconds = (Date.now() - gameData.lastSaveTime) / 1000;
                 simulateOfflineGrowth(timeOfflineSeconds); 
+                checkRestock(); // Verifica se houve reposição offline
             }
             
             updateStats();
@@ -509,7 +566,6 @@ function loadGame() {
 function simulateOfflineGrowth(seconds) {
     if (seconds <= 0) return;
 
-    // Não escalamos o tempo para o crescimento offline para simplificar
     const effectiveSeconds = seconds; 
     
     gameData.plots.forEach(plot => {
@@ -523,20 +579,80 @@ function simulateOfflineGrowth(seconds) {
             const timeSinceStart = (Date.now() - plot.growthStart) / 1000;
             const newTimeSinceStart = timeSinceStart + effectiveSeconds;
             
-            const newStage = Math.floor(newTimeSinceStart / timePerStage);
+            const stagesPassed = Math.floor(newTimeSinceStart / timePerStage) - plot.growthStage;
             
-            if (newStage > plot.growthStage) {
-                plot.growthStage = Math.min(newStage, maxStages);
+            if (stagesPassed > 0) {
+                // Diminui os waterStages pelo número de estágios passados
+                plot.waterStages = Math.max(0, plot.waterStages - stagesPassed);
+                plot.isWatered = plot.waterStages > 0; // Atualiza o status de rega
                 
-                // Se a planta estiver pronta, assume que não foi regada, mas só se não for multi-colheita
-                if (plot.growthStage < maxStages) {
-                     plot.isWatered = false; 
+                // Atualiza o estágio de crescimento se houver água suficiente
+                if (plot.waterStages > 0) {
+                    plot.growthStage = Math.min(plot.growthStage + stagesPassed, maxStages);
+                } else {
+                    // O crescimento para quando a água acaba. 
+                    // Se estivermos fora do jogo, assumimos que a água só dura 1 estágio por padrão.
+                    // Para simplificar, apenas garantimos que o crescimento não exceda o tempo offline.
+                    plot.growthStage = Math.min(Math.floor(newTimeSinceStart / timePerStage), maxStages);
+                    plot.waterStages = 0;
+                    plot.isWatered = false;
                 }
             }
         }
     });
 
     saveGame();
+}
+
+// --- NOVO SISTEMA DE REPOSIÇÃO DE ESTOQUE ---
+function checkRestock() {
+    const now = Date.now();
+    
+    if (now - lastRestockTime >= RESTOCK_INTERVAL) {
+        restockAllShops();
+        lastRestockTime = now;
+        saveGame();
+    }
+}
+
+function restockAllShops() {
+    // 1. Reposição de Sementes
+    Object.keys(gameData.seeds).forEach(key => {
+        const seed = gameData.seeds[key];
+        if (seed.currentStock < seed.maxStock) {
+            if (Math.random() < seed.restockChance) {
+                seed.currentStock = Math.min(seed.currentStock + 1, seed.maxStock);
+            }
+        }
+    });
+
+    // 2. Reposição de Equipamentos
+    Object.keys(GEAR).forEach(key => {
+        const gear = GEAR[key];
+        if (gameData.inventory[key] < gear.maxStock) { // Usamos maxStock para controle de estoque de loja
+            if (Math.random() < gear.restockChance) {
+                gameData.inventory[key].currentStock = Math.min(gear.currentStock + 1, gear.maxStock);
+            }
+        }
+    });
+    
+    // 3. Reposição de Ovos
+    Object.keys(gameData.eggs).forEach(key => {
+        const egg = gameData.eggs[key];
+        if (egg.currentStock < egg.maxStock) {
+            if (Math.random() < egg.restockChance) {
+                egg.currentStock = Math.min(egg.currentStock + 1, egg.maxStock);
+            }
+        }
+    });
+
+    // Força a atualização do modal se estiver aberto
+    if (shopInteractionModal.style.display === 'block') {
+        const title = modalTitle.textContent;
+        if (title.includes("Sementes")) modalContent.innerHTML = renderSeedShop();
+        if (title.includes("Equipamentos")) modalContent.innerHTML = renderGearShop();
+        if (title.includes("Pets")) modalContent.innerHTML = renderEggShop();
+    }
 }
 
 function checkGrowth() {
@@ -550,26 +666,36 @@ function checkGrowth() {
         const timePerStage = 5; // 5 segundos por estágio
 
         // Regar automático por sprinkler
-        if (!plot.isWatered) {
+        if (plot.waterStages === 0) {
             let waterChance = 0;
             if (gameData.inventory.basicSprinkler > 0) waterChance = 0.3;
             if (gameData.inventory.proSprinkler > 0) waterChance = 0.6; 
             
             if (waterChance > 0 && Math.random() < waterChance) {
-                plot.isWatered = true;
+                waterPlot(gameData.plots.indexOf(plot)); // Usa a função de rega para aplicar o waterStages
             }
         }
 
         const timeSinceStart = (Date.now() - plot.growthStart) / 1000;
         const newStage = Math.floor(timeSinceStart / timePerStage);
+        const stagesToAdvance = newStage - plot.growthStage;
         
-        if (newStage > plot.growthStage && plot.isWatered) {
-            plot.growthStage = newStage;
+        if (stagesToAdvance > 0) {
             
-            // Requer rega novamente para o próximo estágio
-            if (plot.growthStage < maxStages) { 
-                plot.isWatered = false; 
+            let successfulStages = 0;
+            // Verifica o crescimento estágio por estágio
+            for (let i = 0; i < stagesToAdvance; i++) {
+                if (plot.waterStages > 0) {
+                    plot.waterStages--;
+                    successfulStages++;
+                }
             }
+            
+            plot.growthStage += successfulStages;
+            plot.growthStage = Math.min(plot.growthStage, maxStages);
+            
+            // Atualiza status de rega para o desenho
+            plot.isWatered = plot.waterStages > 0;
         }
     });
     saveGame();
@@ -582,7 +708,10 @@ function updateStats() {
     if (sprinklerCountSpan) sprinklerCountSpan.textContent = gearCount; 
     
     if (petNameSpan) petNameSpan.textContent = gameData.pet.name;
-    if (petBonusSpan) petBonusSpan.textContent = `x${gameData.pet.bonus.toFixed(2)}`;
+    let bonusText = `x${gameData.pet.bonus.toFixed(2)}`;
+    if (gameData.pet.ability === 'mutation_boost') bonusText = '+20% Mutações';
+    if (gameData.pet.ability === 'water_time') bonusText = '2x Duração Água';
+    if (petBonusSpan) petBonusSpan.textContent = bonusText;
     
     // Recarrega o conteúdo do Vendedor se o modal estiver aberto
     if (shopInteractionModal.style.display === 'block' && modalTitle && modalTitle.textContent === "Vendedor de Colheitas") {
@@ -616,6 +745,11 @@ function renderSeedShop() {
             <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buySeed('${key}')">Comprar</button>
         </div>`;
     });
+    // Adiciona o tempo da próxima reposição
+    const nextRestock = new Date(lastRestockTime + RESTOCK_INTERVAL);
+    html += `<p style="font-size: 10px; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+        Próxima Reposição de Estoque: ${nextRestock.toLocaleTimeString()}</p>`;
+        
     return html;
 }
 
@@ -636,21 +770,29 @@ function renderGearShop() {
     let html = '';
     Object.keys(GEAR).forEach(key => {
         const gearItem = GEAR[key];
-        const disabled = gameData.money < gearItem.cost;
+        const disabled = gameData.money < gearItem.cost || gearItem.currentStock <= 0;
+        const currentStock = gearItem.currentStock !== undefined ? gearItem.currentStock : 1; // Usar stock da loja
+        
         html += `<div class="shop-item">
             <span><strong>${gearItem.name}</strong> (${gearItem.cost}¢) | Seu: ${gameData.inventory[key] || 0}</span>
-            <small>${gearItem.description}</small>
+            <small>${gearItem.description} | Estoque: ${currentStock}</small>
             <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buyGear('${key}')">Comprar</button>
         </div>`;
     });
+    
+    const nextRestock = new Date(lastRestockTime + RESTOCK_INTERVAL);
+    html += `<p style="font-size: 10px; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+        Próxima Reposição de Estoque: ${nextRestock.toLocaleTimeString()}</p>`;
+        
     return html;
 }
 
 function buyGear(gearKey) {
     const gearItem = GEAR[gearKey];
-    if (gameData.money >= gearItem.cost) {
+    if (gameData.money >= gearItem.cost && gearItem.currentStock > 0) {
         gameData.money -= gearItem.cost;
-        gameData.inventory[gearKey] = (gameData.inventory[gearKey] || 0) + 1;
+        gearItem.currentStock -= 1; // Diminui o estoque da loja
+        gameData.inventory[gearKey] = (gameData.inventory[gearKey] || 0) + 1; // Aumenta o inventário do jogador
         if (modalContent) modalContent.innerHTML = renderGearShop(); 
         saveGame();
     }
@@ -659,44 +801,55 @@ function buyGear(gearKey) {
 
 function renderEggShop() {
     let html = '';
-    Object.keys(EGGS).forEach(key => {
-        const eggItem = EGGS[key];
-        const disabled = gameData.money < eggItem.cost;
+    Object.keys(gameData.eggs).forEach(key => {
+        const eggItem = gameData.eggs[key];
+        const disabled = gameData.money < eggItem.cost || eggItem.currentStock <= 0;
+        
+        // Exibe as chances
+        let chanceList = eggItem.pets.map((p, index) => {
+            return `${PETS[p].name} (${(eggItem.chance[index] * 100).toFixed(0)}%)`;
+        }).join(', ');
+        
         html += `<div class="shop-item">
-            <span><strong>${eggItem.name}</strong> (${eggItem.cost}¢)</span>
-            <small>Pode chocar: ${eggItem.pets.map(p => PETS[p].name).join(', ')}</small>
+            <span><strong>${eggItem.name}</strong> (${eggItem.cost}¢) | Estoque: ${eggItem.currentStock}</span>
+            <small>Choca: ${chanceList}</small>
             <button class="buy-button" ${disabled ? 'disabled' : ''} onclick="buyAndHatchEgg('${key}')">Comprar & Chocar</button>
         </div>`;
     });
+
+    const nextRestock = new Date(lastRestockTime + RESTOCK_INTERVAL);
+    html += `<p style="font-size: 10px; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+        Próxima Reposição de Estoque: ${nextRestock.toLocaleTimeString()}</p>`;
+        
     return html;
 }
 
 function buyAndHatchEgg(eggKey) {
-    const egg = EGGS[eggKey];
-    if (gameData.money >= egg.cost) {
+    const egg = gameData.eggs[eggKey];
+    if (gameData.money >= egg.cost && egg.currentStock > 0) {
         gameData.money -= egg.cost;
+        egg.currentStock -= 1; // Diminui o estoque da loja
         
-        let petIndex = -1;
+        let petKey = 'none';
         let cumulativeChance = 0;
         const rand = Math.random();
         
         for (let i = 0; i < egg.chance.length; i++) {
             cumulativeChance += egg.chance[i];
             if (rand <= cumulativeChance) {
-                petIndex = i;
+                petKey = egg.pets[i];
                 break;
             }
         }
         
-        const petKey = egg.pets[petIndex];
         const newPet = PETS[petKey];
 
         gameData.pet = newPet;
         
-        alert(`Parabéns! Você chocou um(a) ${newPet.name} com bônus x${newPet.bonus.toFixed(2)}!`);
+        alert(`Parabéns! Você chocou um(a) ${newPet.name}! Bônus: ${petBonusSpan.textContent}`);
         
         if (shopInteractionModal) shopInteractionModal.style.display = 'none';
-        stopPlayer(); // Adicionado para garantir que o movimento trave ao fechar
+        stopPlayer(); 
         saveGame();
     }
     updateStats();
@@ -808,7 +961,7 @@ function executeAdminCommand(command) {
     if (cmd === '/give') {
         const numValue = parseInt(value);
         if (isNaN(numValue) || numValue < 0) {
-            log = "Valor inválido. Use: /give [money/seed/gear] [item] [quantidade]";
+            log = "Valor inválido. Use: /give [money/seed/gear/egg] [item] [quantidade]";
         } else if (target === 'money') {
             gameData.money += numValue;
             log = `Adicionado ${numValue}¢. Dinheiro atual: ${gameData.money.toFixed(2)}¢.`;
@@ -818,6 +971,9 @@ function executeAdminCommand(command) {
         } else if (target === 'gear' && GEAR[value]) {
              gameData.inventory[value] = (gameData.inventory[value] || 0) + numValue;
              log = `Adicionado ${numValue}x ${GEAR[value].name} ao seu inventário.`;
+        } else if (target === 'egg' && gameData.eggs[value]) {
+             gameData.eggs[value].currentStock = (gameData.eggs[value].currentStock || 0) + numValue;
+             log = `Adicionado ${numValue}x ${gameData.eggs[value].name} ao estoque da loja.`;
         } else {
             log = `Comando /give inválido ou item não encontrado: ${value}.`;
         }
@@ -826,6 +982,9 @@ function executeAdminCommand(command) {
         if (target === 'seed' && gameData.seeds[value]) {
              gameData.seeds[value].currentStock = numValue;
              log = `Estoque de ${gameData.seeds[value].name} ajustado para: ${numValue}.`;
+        } else if (target === 'egg' && gameData.eggs[value]) {
+             gameData.eggs[value].currentStock = numValue;
+             log = `Estoque de ${gameData.eggs[value].name} ajustado para: ${numValue}.`;
         } else {
             log = `Comando /stock inválido ou item não encontrado.`;
         }
@@ -882,7 +1041,7 @@ if (harvestAllButton) {
     });
 }
 
-// Interação no Jardim (Plantar/Colher)
+// Interação no Jardim (Plantar/Colher/Regar por Clique)
 canvas.addEventListener('click', (e) => {
     if (gameData.currentScene === 'garden') {
         const rect = canvas.getBoundingClientRect();
@@ -907,7 +1066,7 @@ canvas.addEventListener('click', (e) => {
             } else if (!plot.isPlanted) {
                 // Tenta plantar (abre modal de plantio)
                 tryPlant();
-            } else if (plot.isPlanted && !plot.isWatered) {
+            } else if (plot.isPlanted && plot.waterStages === 0) {
                 // Tenta regar
                 waterPlot(plotIndex);
             }
@@ -937,7 +1096,8 @@ if (adminButtonMap) {
                             <p style="font-size: 12px; margin-top: 10px;">Comandos: <br>
                                 /give money [valor] <br>
                                 /give seed [tipo] [qtd] (ex: /give seed cosmicDust 1)<br>
-                                /stock seed [tipo] [novo_estoque]
+                                /give egg [tipo] [qtd] (ex: /give egg legendaryEgg 1)<br>
+                                /stock seed/egg [tipo] [novo_estoque]
                             </p>
                         `;
                         // Reatribui o listener do botão Run Command
@@ -1011,7 +1171,6 @@ function setupJoystick() {
     
     // Mouse Events
     joystick.addEventListener('mousedown', handleStart);
-    // CRÍTICO: Os eventos de move e up devem estar no 'document' para pegar quando o mouse sai do joystick
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleEnd); 
 
@@ -1019,7 +1178,7 @@ function setupJoystick() {
     joystick.addEventListener('touchstart', handleStart);
     document.addEventListener('touchmove', handleMove);
     document.addEventListener('touchend', handleEnd); 
-    document.addEventListener('touchcancel', handleEnd); // Adicionado para segurança
+    document.addEventListener('touchcancel', handleEnd); 
 }
 
 // Teclado (Fallback)
@@ -1044,6 +1203,7 @@ function gameLoop() {
     // 2. Lógica de Jogo
     if (gameData.currentScene === 'map') {
         checkMapInteractions();
+        checkRestock(); // Verifica o estoque a cada frame no mapa
     } else {
         checkGrowth(); 
     }
@@ -1051,8 +1211,8 @@ function gameLoop() {
     // 3. Desenhar
     drawPlayer();
 
-    // 4. Salvar (apenas a cada 5 segundos se o jogador estiver se movendo)
-    if (isMoving && Date.now() - gameData.player.lastMove > 5000) {
+    // 4. Salvar (a cada 5 segundos)
+    if (Date.now() - gameData.player.lastMove > 5000) {
         saveGame();
         gameData.player.lastMove = Date.now();
     }
@@ -1066,4 +1226,4 @@ window.onload = function() {
     changeScene(gameData.currentScene); 
     updateStats();
     gameLoop();
-                         }
+        }
