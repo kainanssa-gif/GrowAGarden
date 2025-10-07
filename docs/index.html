@@ -7,55 +7,56 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
-    <div id="game-container">
-        <canvas id="gardenCanvas" width="400" height="400"></canvas>
+
+    <div id="gameContainer">
         
-        <div id="joystick-container">
-            <div id="joystick"></div>
+        <div id="header">
+            <div>
+                Dinheiro: <span id="money">100.00</span>¢
+            </div>
+            <div>
+                Sprinklers Ativos: <span id="sprinklerCount">0</span>
+            </div>
+            <div id="petInfo">
+                Pet: <span id="petName">Nenhum</span> (<span id="petBonus">N/A</span>)
+            </div>
         </div>
 
-        <div id="stats-panel">
-            <p>Dinheiro: <span id="money">100.00</span>¢</p>
-            <p>Equipamentos: <span id="sprinklerCount">1</span></p>
-            <p>Pet: <span id="petName">Nenhum</span> (<span id="petBonus">x1.00</span>)</p>
+        <canvas id="gardenCanvas" width="400" height="400"></canvas>
+
+        <div id="controls">
+            
+            <div id="inventoryTools">
+                </div>
+
+            <button id="waterButton">Regar Tudo</button>
+            <button id="harvestAllButton">Colher Tudo</button>
+            <button id="adminButtonMap">Admin</button>
         </div>
 
-        <div id="global-actions">
-            <button id="sceneChanger" class="game-button" style="display: none;">Entrar no Jardim</button>
-            <button id="adminButtonMap" class="game-button admin-button">Admin</button>
-        </div>
-
-        <div id="garden-controls">
-            <button id="waterButton" class="game-button" style="display: none;">Regar</button>
-            <button id="harvestAllButton" class="game-button" style="display: none;">Colher Tudo</button>
-        </div>
     </div>
 
     <div id="shopInteractionModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">Loja de Sementes</h2>
-            
-            <div id="modalScrollContent" class="modal-scroll-area">
-                <div id="modalContent">
-                    <p>Carregando...</p>
+            <span class="close-button" id="closeModalButton">&times;</span>
+            <h3 id="modalTitle">Loja</h3>
+            <div id="modalScrollContent" class="modal-scroll-content">
                 </div>
-            </div>
-            
-            <button id="closeModalButton" class="close-button">Fechar</button>
+            <div id="modalContent">
+                </div>
         </div>
     </div>
 
-    <div id="adminPanel" class="modal" style="display: none;">
-        <div class="modal-content admin-modal">
-            <h2 id="adminTitle">Painel de Administrador</h2>
-            
-            <div id="adminScrollContent" class="modal-scroll-area">
+    <div id="adminPanel" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeAdminPanelButton">&times;</span>
+            <h3>Painel de Administração</h3>
+            <div id="adminScrollContent" class="modal-scroll-content">
                 </div>
-            
-            <button id="closeAdminPanelButton" class="close-button">Fechar Admin</button>
         </div>
     </div>
+
+    <button id="sceneChanger">Entrar/Sair</button>
 
     <script src="script.js"></script>
 </body>
