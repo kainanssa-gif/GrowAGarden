@@ -16,6 +16,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative; /* Importante para o joystick */
 }
 
 #header {
@@ -155,7 +156,7 @@ body {
     border-radius: 3px;
 }
 
-/* Estilos de Ferramentas (Novos) */
+/* Estilos de Ferramentas */
 #inventoryTools {
     display: flex;
     gap: 5px;
@@ -179,4 +180,33 @@ body {
     background-color: #ffd700; /* Dourado */
     color: black;
     border-color: #ff8c00;
+}
+
+/* --- ESTILOS DO JOYSTICK (CORRIGIDO PARA DISPLAY: BLOCK) --- */
+#joystick-container {
+    position: absolute;
+    bottom: 30px; /* Posicionado no canto inferior esquerdo, fora do canvas */
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    /* CORREÇÃO: Mostra o container */
+    display: block; 
+    z-index: 5;
+    /* Adicionado transform e position:absolute ao gameContainer para referência */
+}
+
+#joystick {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
+    touch-action: none; /* Previne que o tablet faça zoom ou scroll */
 }
