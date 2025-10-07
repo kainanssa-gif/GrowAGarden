@@ -1,234 +1,182 @@
 body {
+    font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
     margin: 0;
-    background-color: #f0f0f0; /* Fundo mais claro, como o original */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333; /* Texto escuro */
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    background-color: #f0f0f0;
 }
 
-#game-container {
-    position: relative;
+#gameContainer {
+    border: 3px solid #333;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#header {
     width: 400px;
-    height: 400px;
-    border: 10px solid #a0a0a0; /* Borda clara e evidente */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    background-color: #556b2f; /* Cor de grama/mapa */
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ccc;
 }
 
-/* Canvas do Jogo */
 #gardenCanvas {
     display: block;
+    border: 1px solid #000;
 }
 
-/* Painel de Estatísticas */
-#stats-panel {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    background-color: rgba(255, 255, 255, 0.9); /* Fundo claro semi-transparente */
-    color: #333;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 13px;
-    line-height: 1.2;
-    z-index: 10;
-    border: 1px solid #ccc;
+#controls {
+    width: 400px;
+    padding: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid #ccc;
+    margin-top: 5px;
 }
 
-#stats-panel p {
-    margin: 3px 0;
-}
-
-/* --- Estilo Padrão dos Botões de Jogo --- */
-.game-button {
+#controls button {
     padding: 8px 12px;
-    margin-left: 5px;
-    background-color: #007bff; /* Azul padrão */
-    color: white;
     border: none;
-    border-radius: 4px;
+    background-color: #4682b4;
+    color: white;
     cursor: pointer;
-    font-size: 12px;
+    border-radius: 5px;
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-grow: 1; 
+    min-width: 80px;
     transition: background-color 0.1s;
 }
 
-.game-button:hover {
-    background-color: #0056b3;
+#controls button:hover {
+    background-color: #3a6a97;
 }
 
-.admin-button {
-    background-color: #dc3545 !important; /* Vermelho para Admin */
-}
-
-/* Controles Globais (Sair/Admin) */
-#global-actions {
+#sceneChanger {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    z-index: 10;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    background-color: #ff5722;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-/* Controles do Jardim (Regar/Colher) */
-#garden-controls {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    z-index: 10;
-}
-
-
-/* --- Joystick (Analógico) --- */
-#joystick-container {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 90px;
-    height: 90px;
-    background-color: rgba(0, 0, 0, 0.1); /* Fundo sutil */
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 20; 
-}
-
-#joystick {
-    width: 45px;
-    height: 45px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    touch-action: none; 
-    cursor: grab;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
-
-/* --- Modal de Interação (Lojas) --- */
+/* MODAL STYLES */
 .modal {
     display: none; 
-    position: fixed;
-    z-index: 100; 
+    position: fixed; 
+    z-index: 10; 
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.4); 
 }
 
 .modal-content {
-    background-color: #fff; /* Fundo branco para modal */
-    color: #333;
-    margin: 10% auto;
+    background-color: #fefefe;
+    margin: 10% auto; 
     padding: 20px;
-    border: 1px solid #777;
-    width: 80%;
-    max-width: 450px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid #888;
+    width: 80%; 
+    max-width: 500px;
+    border-radius: 10px;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-}
-
-/* Título do modal */
-#modalTitle {
-    color: #007bff;
-    margin-top: 0;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-}
-
-/* ÁREA DE ROLAGEM CRÍTICA */
-.modal-scroll-area {
-    overflow-y: auto; 
-    max-height: 50vh; 
-    margin: 15px 0;
-    padding: 0 10px;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    flex-grow: 1;
-}
-
-#modalContent {
-    padding: 10px 0;
-}
-
-/* Estilo dos Itens da Loja */
-.shop-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 5px;
-    text-align: left;
-    flex-wrap: wrap;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-}
-
-.shop-item span {
-    flex: 1 1 50%;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.shop-item small {
-    flex: 1 1 100%;
-    color: #666;
-    margin-top: 2px;
-}
-
-.buy-button {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    flex-shrink: 0; 
-    margin-left: 10px;
-    transition: background-color 0.2s;
-}
-
-.buy-button:hover {
-    background-color: #218838;
-}
-
-.buy-button:disabled {
-    background-color: #ccc;
-    color: #666;
-    cursor: not-allowed;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .close-button {
-    background-color: #6c757d; /* Cinza para fechar */
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
     cursor: pointer;
-    margin-top: 15px;
-    transition: background-color 0.1s;
 }
 
-.close-button:hover {
-    background-color: #5a6268;
+.close-button:hover,
+.close-button:focus {
+    color: #000;
+    text-decoration: none;
 }
 
-/* Estilo específico para o Admin Panel */
-.admin-modal {
-    background-color: #343a40; /* Fundo escuro para Admin */
+.modal-scroll-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* Shop Item Styling */
+.shop-item {
+    border-bottom: 1px dashed #ccc;
+    padding: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-item h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.shop-item p {
+    margin: 2px 0;
+    font-size: 12px;
+    color: #555;
+}
+
+.shop-item button {
+    padding: 5px 10px;
+    border: none;
+    background-color: #008cba;
     color: white;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+/* Estilos de Ferramentas (Novos) */
+#inventoryTools {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.tool-button {
+    padding: 5px 10px;
+    background-color: #8fbc8f; /* Cor do jardim */
+    border: 2px solid #556b2f;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    flex-grow: 1;
+}
+
+/* Estilo para a ferramenta selecionada */
+.tool-button.selected {
+    background-color: #ffd700; /* Dourado */
+    color: black;
+    border-color: #ff8c00;
 }
