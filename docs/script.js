@@ -24,6 +24,7 @@ let lastRestockTime = Date.now();
 
 // Variáveis para carregar as imagens
 const SEED_IMAGES = {}; 
+const HARVESTED_IMAGES = {}; // NOVO: Para imagens após a colheita (árvores multi)
 const OTHER_IMAGES = {}; // Para imagens como a Placa de Expansão
 let imagesLoaded = 0;
 let totalImages = 0;
@@ -90,7 +91,7 @@ const EXPANSION_IMAGE_URL = 'https://raw.githubusercontent.com/kainanssa-gif/Gro
 
 // --- SEMENTES (Com slots de plantio e IMAGENS) ---
 const SEEDS_DATA = {
-    // Comuns (1x1)
+    // Comuns (1x1) - SINGLE
     carrot: { 
         name: 'Cenoura Comum', cost: 50, sellValue: 100, growTime: 10, count: 5, maxStock: 10, currentStock: 10, 
         color: '#ff9800', type: 'single', harvestColor: '#ff9800', rarity: 'common', restockChance: 1.0, slots: 1,
@@ -102,11 +103,12 @@ const SEEDS_DATA = {
         imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Pumpkim.png' 
     },
     
-    // Raras (1x1)
+    // Raras (1x1) - MULTI
     blueBerry: { 
         name: 'Mirtilo Raro', cost: 400, sellValue: 800, growTime: 15, count: 0, maxStock: 4, currentStock: 4, 
         color: '#4169e1', type: 'multi', harvestColor: '#4169e1', rarity: 'rare', restockChance: 0.8, slots: 1, 
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Blueberry.png' 
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Blueberry.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Blueberry_vazia.png' 
     },
     moonFlower: { 
         name: 'Flor Lunar Rara', cost: 800, sellValue: 1800, growTime: 25, count: 0, maxStock: 2, currentStock: 2, 
@@ -123,7 +125,8 @@ const SEEDS_DATA = {
     starFruit: { 
         name: 'Carambola Estelar', cost: 1500, sellValue: 3500, growTime: 35, count: 0, maxStock: 1, currentStock: 1, 
         color: '#fdfd96', type: 'multi', harvestColor: '#fdfd96', rarity: 'epic', restockChance: 0.5, slots: 4, // 4 SLOTS (2x2)
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Star_fruit.png' 
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Star_fruit.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Star_fruit_vazia.png' 
     },
 
     // Lendárias (1x1 e 2x2)
@@ -135,56 +138,65 @@ const SEEDS_DATA = {
     crystalGrape: { 
         name: 'Uva de Cristal', cost: 7500, sellValue: 18000, growTime: 70, count: 0, maxStock: 1, currentStock: 1, 
         color: '#e6e6fa', type: 'multi', harvestColor: '#e6e6fa', rarity: 'legendary', restockChance: 0.3, slots: 4, // 4 SLOTS (2x2)
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Crystal_grape.png' 
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Crystal_grape.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Crystal_grape_vazia.png' 
     },
 
-    // Míticas (2x2) - Nomes e URLs atualizados
+    // Míticas (2x2) - NOVO: Solar Fruit só dá 1 fruta por colheita
     solarMango: { 
         name: 'Solar Fruit', cost: 15000, sellValue: 35000, growTime: 90, count: 0, maxStock: 1, currentStock: 1, 
         color: '#ff8c00', type: 'multi', harvestColor: '#ff8c00', rarity: 'mythic', restockChance: 0.1, slots: 4, // 4 SLOTS (2x2)
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Solar_fruit.png' 
+        harvestCount: 1, // Força 1 fruta por colheita
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Solar_fruit.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Solar_fruit_vazia.png' 
     },
     voidApple: { 
         name: 'Maçã de Tinta', cost: 20000, sellValue: 50000, growTime: 120, count: 0, maxStock: 1, currentStock: 1, 
         color: '#000000', type: 'multi', harvestColor: '#000000', rarity: 'mythic', restockChance: 0.1, slots: 4, // 4 SLOTS (2x2)
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Painty_apple.png' 
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Painty_apple.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Painty_apple_vazia.png' // URL CORRIGIDA
     },
     
     // Mítica Suprema (2x2)
     cosmicDust: { 
         name: 'Poeira Cósmica', cost: 50000, sellValue: 150000, growTime: 180, count: 0, maxStock: 1, currentStock: 1, 
         color: '#8a2be2', type: 'multi', harvestColor: '#8a2be2', rarity: 'supreme', restockChance: 0.05, slots: 4, // 4 SLOTS (2x2)
-        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Cosmic_dust.png' 
+        imageURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Cosmic_dust.png',
+        harvestedURL: 'https://raw.githubusercontent.com/kainanssa-gif/GrowAGarden/main/assets/Cosmic_dust_vazia.png' // URL CORRIGIDA
     },
 };
 
 // Função de pré-carregamento de imagens
 function loadImages() {
-    // Carrega Sementes
-    totalImages = Object.keys(SEEDS_DATA).length + 1; // +1 para a placa de expansão
+    totalImages = Object.keys(SEEDS_DATA).length * 2 + 1; 
+    
     for (const key in SEEDS_DATA) {
-        const url = SEEDS_DATA[key].imageURL;
+        const seed = SEEDS_DATA[key];
+        
+        // Carrega imagem de semente CHEIA (sempre existe)
         const img = new Image();
-        img.onload = () => {
-            imagesLoaded++;
-        };
-        img.onerror = () => {
-             console.error(`Falha ao carregar a imagem para ${key}: ${url}. Usando fallback de cor.`);
-            imagesLoaded++; 
-        };
-        img.src = url;
+        img.onload = () => { imagesLoaded++; };
+        img.onerror = () => { console.error(`Falha ao carregar img CHEIA para ${key}.`); imagesLoaded++; };
+        img.src = seed.imageURL;
         SEED_IMAGES[key] = img;
+        
+        // Carrega imagem de semente VAZIA (se for multi)
+        if (seed.type === 'multi' && seed.harvestedURL) {
+            const harvestedImg = new Image();
+            harvestedImg.onload = () => { imagesLoaded++; };
+            harvestedImg.onerror = () => { console.error(`Falha ao carregar img VAZIA para ${key}.`); imagesLoaded++; };
+            harvestedImg.src = seed.harvestedURL;
+            HARVESTED_IMAGES[key] = harvestedImg;
+        } else {
+            // Conta como carregado, mesmo se não tiver URL vazia (single)
+            imagesLoaded++; 
+        }
     }
     
     // Carrega Placa de Expansão
     const expansionImg = new Image();
-    expansionImg.onload = () => {
-        imagesLoaded++;
-    };
-    expansionImg.onerror = () => {
-        console.error(`Falha ao carregar a Placa de Expansão: ${EXPANSION_IMAGE_URL}. Usando fallback de cor.`);
-        imagesLoaded++;
-    };
+    expansionImg.onload = () => { imagesLoaded++; };
+    expansionImg.onerror = () => { console.error(`Falha ao carregar a Placa de Expansão.`); imagesLoaded++; };
     expansionImg.src = EXPANSION_IMAGE_URL;
     OTHER_IMAGES.expansionPlate = expansionImg;
 }
@@ -195,13 +207,13 @@ loadImages();
 // Dados iniciais
 const INITIAL_DATA = {
     money: 100,
-    inventory: { basicSprinkler: 0, proSprinkler: 0, wateringCan: 1, reclaimer: 0 }, // Reclaimer no inventário inicial
+    inventory: { basicSprinkler: 0, proSprinkler: 0, wateringCan: 1, reclaimer: 0 }, 
     harvestInventory: {},
-    seeds: JSON.parse(JSON.stringify(SEEDS_DATA)), // CÓPIA PROFUNDA
+    seeds: JSON.parse(JSON.stringify(SEEDS_DATA)), 
     plots: [],
     pet: PETS.none,
     currentScene: 'map', 
-    selectedItem: 'none', // Item selecionado: 'wateringCan', 'reclaimer', 'none'
+    selectedItem: 'none', 
     gardenExpansion: { x: 0, y: 0 }, 
     player: { 
         x: 1 * TILE_SIZE, 
@@ -227,7 +239,8 @@ function initializePlots(gardenWidth, gardenHeight) {
                 isWatered: false, 
                 waterStages: 1,
                 isMaster: false, 
-                masterPlotIndex: -1 
+                masterPlotIndex: -1,
+                isHarvested: false // NOVO CAMPO: Se é multi e foi colhida
             });
         }
     }
@@ -386,7 +399,8 @@ function drawPlot(plot, offsetX, offsetY, plotIndex) {
     const maxGrowth = 100;
     const growthPercent = plot.growthStage / maxGrowth;
 
-    if (seed && seed.slots === 4 && plot.masterPlotIndex !== plotIndex) {
+    // Se for um plot escravo de 2x2, não desenha
+    if (seed && seed.slots === 4 && plot.masterPlotIndex !== plotIndex && !isMaster) {
         return; 
     }
 
@@ -394,21 +408,27 @@ function drawPlot(plot, offsetX, offsetY, plotIndex) {
     let soilColor = plot.isWatered ? '#8b4513' : '#a0522d'; 
     ctx.fillStyle = soilColor;
     
-    if (seed && seed.slots === 4 && isMaster) {
-         ctx.fillRect(x, y, TILE_SIZE * 2, TILE_SIZE * 2); 
-    } else {
-        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-    }
+    const drawSize = seed && seed.slots === 4 && isMaster ? TILE_SIZE * 2 : TILE_SIZE;
+    ctx.fillRect(x, y, drawSize, drawSize);
     
-
     // 2. Desenha a plantação
     if (plot.isPlanted && seed) {
         const drawX = x;
         const drawY = y;
-        const drawSize = seed.slots === 4 ? TILE_SIZE * 2 : TILE_SIZE;
 
+        // Se a planta é multi-colheita e já foi colhida, desenha a arte de VAZIA
+        if (seed.type === 'multi' && plot.isHarvested) {
+             const harvestedImg = HARVESTED_IMAGES[plot.seedType];
+             if (harvestedImg && harvestedImg.complete) {
+                ctx.drawImage(harvestedImg, drawX, drawY, drawSize, drawSize);
+             } else {
+                 // Fallback simples (sem progresso)
+                 ctx.fillStyle = seed.color;
+                 ctx.fillRect(drawX + 5, drawY + 5, drawSize - 10, drawSize - 10);
+             }
+        } 
         // Crescimento
-        if (plot.growthStage < maxGrowth) {
+        else if (plot.growthStage < maxGrowth) {
             // Desenho do estágio de crescimento (cruz ou ponto + barra de progresso)
             ctx.fillStyle = 'green';
             if (seed.slots === 4) {
@@ -431,7 +451,7 @@ function drawPlot(plot, offsetX, offsetY, plotIndex) {
             ctx.fillRect(drawX + 2, drawY + drawSize - 8, (drawSize - 4) * growthPercent, 6);
             
         } 
-        // Pronto para colher (Desenha Imagem)
+        // Pronto para colher (Desenha Imagem CHEIA)
         else {
             const img = SEED_IMAGES[plot.seedType];
              if (img && img.complete) {
@@ -592,15 +612,23 @@ function updatePlots() {
             const growthRatePerMs = maxGrowth / (seed.growTime * 1000); 
 
             let rate = growthRatePerMs;
+            
+            // Se a planta já foi colhida, ela cresce mais devagar (menos 10%)
+            if (plot.isHarvested) {
+                rate *= 0.9;
+            }
+            
             if (plot.isWatered) {
                 rate *= 1.5; 
             }
             
             plot.growthStage = Math.min(maxGrowth, plot.growthStage + rate * (now - plot.growthStart));
             plot.growthStart = now; 
-
+            
+            // Lógica de desvanecimento da água
             if (plot.isWatered) {
                 // A cada 10 segundos, verifica a duração da rega (água evapora)
+                // Usando um operador para verificar a passagem do tempo
                 if (now % 10000 < 50) { 
                     const waterDuration = (gameData.pet.ability === 'water_time') ? 2 : 1;
                     if (plot.waterStages > waterDuration) {
@@ -609,6 +637,15 @@ function updatePlots() {
                     } else {
                         plot.waterStages++;
                     }
+                }
+            }
+            
+            // Quando atinge 100%, zera a contagem de água e marca como não colhida (pronta)
+            if (plot.growthStage >= maxGrowth) {
+                plot.isWatered = false;
+                plot.waterStages = 1;
+                if (plot.isHarvested) {
+                    plot.isHarvested = false;
                 }
             }
         }
@@ -697,11 +734,12 @@ function plantSeed(plotIndex, seedKey) {
         return;
     }
     
+    const { width } = getCurrentGardenDimensions();
+    const x = plot.gridX;
+    const y = plot.gridY;
+    
+    // Lógica para 2x2
     if (seed.slots === 4) {
-        const { width } = getCurrentGardenDimensions();
-        const x = plot.gridX;
-        const y = plot.gridY;
-        
         if (!checkPlantingSpace(x, y, 4)) {
             alert("Sementes grandes (2x2) precisam de 4 espaços vazios em um quadrado!");
             return;
@@ -723,7 +761,8 @@ function plantSeed(plotIndex, seedKey) {
             currentPlot.isWatered = false; 
             currentPlot.waterStages = 1;
             currentPlot.isMutated = (gameData.pet.ability === 'mutation_boost' && Math.random() < 0.20);
-            
+            currentPlot.isHarvested = false; // Começa sem colheita
+
             if (i === 0) {
                 currentPlot.isMaster = true; 
                 currentPlot.masterPlotIndex = plotIndex;
@@ -733,6 +772,7 @@ function plantSeed(plotIndex, seedKey) {
             }
         }
     } 
+    // Lógica para 1x1
     else {
         plot.isPlanted = true;
         plot.seedType = seedKey;
@@ -743,6 +783,7 @@ function plantSeed(plotIndex, seedKey) {
         plot.isMaster = true; 
         plot.masterPlotIndex = plotIndex;
         plot.isMutated = (gameData.pet.ability === 'mutation_boost' && Math.random() < 0.20);
+        plot.isHarvested = false;
     }
 
     gameData.seeds[seedKey].count--;
@@ -750,19 +791,27 @@ function plantSeed(plotIndex, seedKey) {
     saveGame();
 }
 
+function getMasterPlot(plotIndex) {
+    const plot = gameData.plots[plotIndex];
+    return plot.isMaster ? plot : (plot.masterPlotIndex !== -1 ? gameData.plots[plot.masterPlotIndex] : plot);
+}
+
 function harvestPlot(plotIndex) {
     const plot = gameData.plots[plotIndex];
-    if (!plot.isPlanted || plot.growthStage < 100) return;
+    const masterPlot = getMasterPlot(plotIndex);
 
-    const seedKey = plot.seedType;
+    if (!masterPlot.isPlanted || masterPlot.growthStage < 100) return;
+
+    const seedKey = masterPlot.seedType;
     const seed = SEEDS_DATA[seedKey];
     
     let baseValue = seed.sellValue;
     let finalValue = baseValue * gameData.pet.bonus;
     
-    let harvestCount = (seed.type === 'multi') ? 2 : 1; 
+    // Se for 'multi', usa harvestCount (padrão 2) ou 1
+    let harvestCount = (seed.type === 'multi') ? (seed.harvestCount || 2) : 1; 
 
-    if (plot.isMutated) {
+    if (masterPlot.isMutated) {
         finalValue *= 1.5;
     }
 
@@ -770,32 +819,50 @@ function harvestPlot(plotIndex) {
     
     gameData.harvestInventory[seedKey] = (gameData.harvestInventory[seedKey] || 0) + harvestCount;
 
+    // Lógica de atualização de plots
+    const { width } = getCurrentGardenDimensions();
+    const masterPlotIndex = masterPlot.masterPlotIndex;
+    
+    let indicesToUpdate = [];
     if (seed.slots === 4) {
-        const { width } = getCurrentGardenDimensions();
-        const indicesToClear = [
-            plotIndex, 
-            getPlotIndex(plot.gridX + 1, plot.gridY, width),
-            getPlotIndex(plot.gridX, plot.gridY + 1, width),
-            getPlotIndex(plot.gridX + 1, plot.gridY + 1, width)
+         // Se for 2x2, pega todos os 4 índices
+        indicesToUpdate = [
+            masterPlotIndex, 
+            getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY, width),
+            getPlotIndex(masterPlot.gridX, masterPlot.gridY + 1, width),
+            getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY + 1, width)
         ];
+    } else {
+        // Se for 1x1, pega apenas o índice mestre
+        indicesToUpdate = [masterPlotIndex];
+    }
 
-        for (const index of indicesToClear) {
-            clearPlot(index);
+    if (seed.type === 'multi') {
+        // Plantas Multi (permanecem e reiniciam)
+        for (const index of indicesToUpdate) {
+            const currentPlot = gameData.plots[index];
+            currentPlot.growthStage = 0; // Reinicia o crescimento
+            currentPlot.growthStart = Date.now();
+            currentPlot.isWatered = false; // Perde o bônus de água
+            currentPlot.isHarvested = true; // Marca como colhido (para desenhar arte vazia)
         }
     } else {
-        clearPlot(plotIndex);
+        // Plantas Single (são removidas)
+        for (const index of indicesToUpdate) {
+            clearPlot(index);
+        }
     }
     
     saveGame();
 }
 
 function reclaimPlot(plotIndex) {
-    const plot = gameData.plots[plotIndex];
+    const plot = getMasterPlot(plotIndex);
     if (!plot.isPlanted) {
         alert("Não há semente plantada aqui.");
         return;
     }
-    if (plot.growthStage >= 100) {
+    if (plot.growthStage >= 100 && plot.seedType && SEEDS_DATA[plot.seedType].type !== 'multi') {
         alert("Planta madura demais para ser reivindicada! Colha primeiro.");
         return;
     }
@@ -807,22 +874,20 @@ function reclaimPlot(plotIndex) {
     gameData.seeds[seedKey].count++;
     
     // Limpa os plots (lida com 2x2)
+    const { width } = getCurrentGardenDimensions();
     if (seed.slots === 4) {
-        const { width } = getCurrentGardenDimensions();
-        const masterPlot = plot.isMaster ? plot : gameData.plots[plot.masterPlotIndex];
-        
         const indicesToClear = [
-            getPlotIndex(masterPlot.gridX, masterPlot.gridY, width), 
-            getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY, width),
-            getPlotIndex(masterPlot.gridX, masterPlot.gridY + 1, width),
-            getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY + 1, width)
+            getPlotIndex(plot.gridX, plot.gridY, width), 
+            getPlotIndex(plot.gridX + 1, plot.gridY, width),
+            getPlotIndex(plot.gridX, plot.gridY + 1, width),
+            getPlotIndex(plot.gridX + 1, plot.gridY + 1, width)
         ];
 
         for (const index of indicesToClear) {
             clearPlot(index);
         }
     } else {
-        clearPlot(plotIndex);
+        clearPlot(plot.masterPlotIndex);
     }
     
     alert(`Semente de ${seed.name} devolvida ao inventário!`);
@@ -841,36 +906,36 @@ function clearPlot(index) {
     plot.waterStages = 1;
     plot.isMaster = false;
     plot.masterPlotIndex = -1;
+    plot.isHarvested = false;
 }
 
 function waterPlot(plotIndex) {
-    const plot = gameData.plots[plotIndex];
-    if (!plot.isPlanted || plot.isWatered) return;
+    const masterPlot = getMasterPlot(plotIndex);
+    if (!masterPlot.isPlanted || masterPlot.isWatered) return;
 
-    let masterPlotIndex = plot.masterPlotIndex !== -1 ? plot.masterPlotIndex : plotIndex;
-    const masterPlot = gameData.plots[masterPlotIndex];
     const seed = masterPlot.seedType ? SEEDS_DATA[masterPlot.seedType] : null;
 
-    if (!masterPlot.isPlanted) return;
+    if (!seed) return;
     
     const waterStages = (gameData.pet.ability === 'water_time') ? 2 : 1;
     
+    const { width } = getCurrentGardenDimensions();
+
+    let indicesToWater = [];
     if (seed.slots === 4) {
-        const { width } = getCurrentGardenDimensions();
-        const indicesToWater = [
-            masterPlotIndex, 
+        indicesToWater = [
+            plotIndex, 
             getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY, width),
             getPlotIndex(masterPlot.gridX, masterPlot.gridY + 1, width),
             getPlotIndex(masterPlot.gridX + 1, masterPlot.gridY + 1, width)
         ];
-
-        for (const index of indicesToWater) {
-            gameData.plots[index].isWatered = true;
-            gameData.plots[index].waterStages = waterStages;
-        }
     } else {
-        masterPlot.isWatered = true;
-        masterPlot.waterStages = waterStages;
+        indicesToWater = [plotIndex];
+    }
+    
+    for (const index of indicesToWater) {
+        gameData.plots[index].isWatered = true;
+        gameData.plots[index].waterStages = waterStages;
     }
     
     saveGame();
@@ -879,17 +944,13 @@ function waterPlot(plotIndex) {
 function sprinklerTick() {
     if (gameData.currentScene !== 'garden') return;
 
-    const { width, height } = getCurrentGardenDimensions();
-
     const applySprinkler = (chance) => {
         if (gameData.plots.length === 0) return;
         const randomIndex = Math.floor(Math.random() * gameData.plots.length);
         const plot = gameData.plots[randomIndex];
-        if (plot.isPlanted && !plot.isWatered) {
-             // Só rega se for master plot ou se for 1x1
-            if (plot.isMaster || plot.masterPlotIndex === -1) {
-                waterPlot(randomIndex);
-            }
+        // Só tenta regar se for um plot mestre ou um plot 1x1
+        if (plot.isPlanted && !plot.isWatered && (plot.isMaster || plot.masterPlotIndex === -1)) {
+            waterPlot(randomIndex);
         }
     };
 
@@ -961,13 +1022,13 @@ function loadGame() {
     if (savedData) {
         const loadedData = JSON.parse(savedData);
         
-        // Correção de Bug: Garante que os objetos internos sejam reatribuídos para evitar referências
+        // CORREÇÃO: Garante que objetos internos sejam reatribuídos
         gameData = { 
             ...INITIAL_DATA, 
             ...loadedData,
             seeds: { ...INITIAL_DATA.seeds, ...loadedData.seeds },
             inventory: { ...INITIAL_DATA.inventory, ...loadedData.inventory },
-            pet: loadedData.pet || PETS.none, // Garante que o pet seja carregado
+            pet: loadedData.pet || PETS.none, 
         };
         
         // Recria a estrutura de plots com a expansão correta
@@ -978,7 +1039,7 @@ function loadGame() {
             const oldPlot = loadedData.plots[i];
             const index = oldPlot.gridY * width + oldPlot.gridX;
             if (index < newPlots.length) {
-                newPlots[index] = oldPlot;
+                newPlots[index] = { ...newPlots[index], ...oldPlot }; // Mescla para incluir 'isHarvested'
             }
         }
         gameData.plots = newPlots;
@@ -1035,11 +1096,21 @@ function openShopModal(type, title, itemsData) {
     modalTitle.textContent = title;
     modalScrollContent.innerHTML = '';
     
-    for (const key in itemsData) {
-        const item = itemsData[key];
+    // CORREÇÃO: Usa os dados globais atualizados (SEEDS_DATA, GEAR, EGGS)
+    const dataToDisplay = type === 'seeds' ? SEEDS_DATA : (type === 'gear' ? GEAR : EGGS);
+
+    for (const key in dataToDisplay) {
+        const item = dataToDisplay[key];
         const stock = item.currentStock !== undefined ? `Estoque: ${item.currentStock}` : '';
-        const inventory = type === 'seeds' ? gameData.seeds[key].count : gameData.inventory[key];
-        const invDisplay = ` (Você tem: ${inventory || 0})`;
+        
+        let inventory = 0;
+        if (type === 'seeds') {
+            inventory = gameData.seeds[key].count;
+        } else if (type === 'gear' || type === 'eggs') {
+            inventory = gameData.inventory[key] || 0;
+        }
+        
+        const invDisplay = ` (Você tem: ${inventory})`;
         const costDisplay = item.cost ? `Custo: ${item.cost}¢` : '';
         const sellDisplay = item.sellValue ? `Vende por: ${item.sellValue}¢` : '';
 
@@ -1082,7 +1153,9 @@ function buyItem(type, key) {
     }
 
     alert(`${itemData.name} comprado(a) com sucesso!`);
-    openShopModal(type, modalTitle.textContent, type === 'seeds' ? gameData.seeds : (type === 'gear' ? GEAR : EGGS));
+    // Passa a referência correta para reabrir o modal
+    const dataToDisplay = type === 'seeds' ? SEEDS_DATA : (type === 'gear' ? GEAR : EGGS);
+    openShopModal(type, modalTitle.textContent, dataToDisplay);
     saveGame();
 }
 
@@ -1164,14 +1237,11 @@ function handleTouchStart(e) {
     const pos = getTouchPos(touch);
     
     // Verifica se o toque está dentro da área do joystick
-    // O container do joystick tem 150x150
     if (pos.x >= 0 && pos.x <= 150 && pos.y >= 0 && pos.y <= 150) {
         activeTouchId = touch.identifier;
-        // O ponto de início do toque é usado como centro de referência
         joystickStartX = 75; 
         joystickStartY = 75;
         
-        // Move o joystick para o centro para começar o arrasto
         joystick.style.left = '50%';
         joystick.style.top = '50%';
         joystick.style.transform = 'translate(-50%, -50%)';
@@ -1185,7 +1255,6 @@ function handleTouchMove(e) {
         const touch = e.changedTouches[i];
         if (touch.identifier === activeTouchId) {
             const containerRect = joystickContainer.getBoundingClientRect();
-            // Calcula a posição do toque relativa ao centro do container (75, 75)
             const touchX = touch.clientX - containerRect.left;
             const touchY = touch.clientY - containerRect.top;
 
@@ -1201,11 +1270,9 @@ function handleTouchMove(e) {
             }
             
             // Move o elemento visual do joystick
-            // O centro do container é 75. 
-            // O joystick.style.left/top é relativo ao container.
             joystick.style.left = `${75 + deltaX}px`;
             joystick.style.top = `${75 + deltaY}px`;
-            joystick.style.transform = 'translate(-50%, -50%)'; // Mantém o centro do joystick no ponto de arrasto
+            joystick.style.transform = 'translate(-50%, -50%)'; 
             
             // Atualiza o movimento do player
             const speedFactor = gameData.player.speed / MAX_DISTANCE;
@@ -1240,7 +1307,7 @@ function handleTouchEnd(e) {
 
 // --- 10. EVENT LISTENERS DIVERSOS (CORRIGIDOS) ---
 
-// --- FUNÇÕES DE INTERAÇÃO DO MAPA ---
+// --- FUNÇÕES DE INTERAÇÃO DO MAPA E JARDIM ---
 canvas.addEventListener('click', (event) => {
     const rect = canvas.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
@@ -1252,20 +1319,17 @@ canvas.addEventListener('click', (event) => {
         
         let shouldTeleport = false;
 
-        // Verifica a colisão do Player com o Tile Clicado (para evitar abrir longe)
         const playerGridX = Math.floor((gameData.player.x + PLAYER_SIZE/2) / TILE_SIZE);
         const playerGridY = Math.floor((gameData.player.y + PLAYER_SIZE/2) / TILE_SIZE);
         
-        // Se o player estiver no tile ou adjacente ao tile, permite a interação
         const isNear = Math.abs(gridX - playerGridX) <= 1 && Math.abs(gridY - playerGridY) <= 1;
 
-        if (!isNear) return; // Não interage se estiver longe
+        if (!isNear) return; 
 
         const tileType = GAME_MAP[gridY][gridX];
 
         if (tileType === 2) { // Jardim (Teleporta)
             gameData.currentScene = 'garden';
-            // Reposiciona o player no centro superior do jardim
             gameData.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
             gameData.player.y = TILE_SIZE;
             shouldTeleport = true;
@@ -1292,7 +1356,7 @@ canvas.addEventListener('click', (event) => {
         const gridX = Math.floor((clickX - offsetX) / TILE_SIZE);
         const gridY = Math.floor((clickY - offsetY) / TILE_SIZE);
         
-        // 1. Interação com as Placas de Expansão
+        // 1. Interação com as Placas de Expansão (Lógica de clique)
         
         // Placa da direita (X)
         const plateX = offsetX + width * TILE_SIZE;
@@ -1322,18 +1386,15 @@ canvas.addEventListener('click', (event) => {
             const plotIndex = getPlotIndex(gridX, gridY, width);
             const plot = gameData.plots[plotIndex];
             
-            let targetPlotIndex = plotIndex;
-
-            if (plot.masterPlotIndex !== -1 && !plot.isMaster) {
-                targetPlotIndex = plot.masterPlotIndex;
-            }
+            // O targetPlotIndex deve ser sempre o MASTER Plot para a interação
+            let targetPlotIndex = plot.isMaster ? plotIndex : (plot.masterPlotIndex !== -1 ? plot.masterPlotIndex : plotIndex);
             
             const targetPlot = gameData.plots[targetPlotIndex];
 
             if (targetPlot.isPlanted) {
-                if (gameData.selectedItem === 'wateringCan') {
+                if (gameData.selectedItem === 'wateringCan' && gameData.inventory.wateringCan > 0) {
                     waterPlot(targetPlotIndex);
-                } else if (gameData.selectedItem === 'reclaimer') {
+                } else if (gameData.selectedItem === 'reclaimer' && gameData.inventory.reclaimer > 0) {
                     reclaimPlot(targetPlotIndex);
                 } else if (targetPlot.growthStage >= 100) {
                     harvestPlot(targetPlotIndex);
@@ -1361,8 +1422,9 @@ function openPlantingModal(plotIndex) {
     modalScrollContent.innerHTML = '';
 
     for (const key in gameData.seeds) {
-        const seed = gameData.seeds[key];
+        const seed = SEEDS_DATA[key];
         
+        // Verifica a compatibilidade de slots 2x2
         let canPlant = true;
         if (seed.slots === 4) {
             canPlant = checkPlantingSpace(gameData.plots[plotIndex].gridX, gameData.plots[plotIndex].gridY, 4);
@@ -1558,6 +1620,7 @@ harvestAllButton.addEventListener('click', () => {
     }
     let harvested = 0;
     for (let i = 0; i < gameData.plots.length; i++) {
+        // Só tenta colher se estiver pronto e for o plot mestre
         if (gameData.plots[i].isPlanted && gameData.plots[i].growthStage >= 100 && gameData.plots[i].isMaster) {
             harvestPlot(i);
             harvested++;
@@ -1578,6 +1641,7 @@ waterButton.addEventListener('click', () => {
     let watered = 0;
     for (let i = 0; i < gameData.plots.length; i++) {
         const plot = gameData.plots[i];
+        // Só tenta regar se precisar de água e for o plot mestre
         if (plot.isPlanted && !plot.isWatered && plot.isMaster) {
             waterPlot(i);
             watered++;
