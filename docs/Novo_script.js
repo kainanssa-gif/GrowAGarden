@@ -170,6 +170,21 @@ let gameData = JSON.parse(JSON.stringify(INITIAL_DATA));
 
 // --- 2. GERENCIAMENTO E SALVAMENTO DE DADOS ---
 
+// Funcao de hard reset para limpar o local storage
+function hardReset() {
+    localStorage.removeItem(SAVE_KEY);
+    window.location.reload(); 
+}
+
+// Vincula a função de reset ao botão Admin/Resetar
+document.addEventListener('DOMContentLoaded', () => {
+    const adminButton = document.getElementById('adminButton');
+    if (adminButton) {
+        adminButton.addEventListener('click', hardReset);
+    }
+});
+
+
 function loadImages() {
     const loadAndTrack = (url, targetObject, key) => {
         const img = new Image();
@@ -182,6 +197,8 @@ function loadImages() {
         };
         img.onerror = () => {
             console.error(`Falha ao carregar imagem: ${url}`);
+            // Tratamento de erro: se uma imagem falhar, o jogo pode travar. 
+            // Para garantir que o jogo inicie, podemos IGNORAR a imagem que falhou:
             imagesLoaded++; 
         };
         img.src = url;
@@ -457,20 +474,23 @@ function drawPlayer(x, y, color) {
     ctx.fill();
 }
 
+// *** FUNÇÃO DE DESENHO CORRIGIDA ***
 function drawMap() {
-    // Limpa o Canvas
+    // 1. Limpa o Canvas
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Desenha o chão e as bordas (mapa 10x10)
+    // 2. Desenha o chão e as bordas (mapa 10x10)
     for (let row = 0; row < 10; row++) {
         for (let col = 0; col < 10; col++) {
             const tileX = col * TILE_SIZE;
             const tileY = row * TILE_SIZE;
             const tileType = GAME_MAP[row][col];
             
+            // ESSA LINHA É ESSENCIAL PARA DESENHAR O CHÃO E AS PAREDES
             ctx.fillStyle = tileType === 1 ? '#696969' : '#3cb371';
-            ctx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
-
+            ctx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE); 
+            // FIM DA LINHA ESSENCIAL
+            
             // Desenha elementos interativos
             if (tileType === 2 && OTHER_IMAGES.gardenEntrance) { 
                 ctx.drawImage(OTHER_IMAGES.gardenEntrance, tileX, tileY, TILE_SIZE, TILE_SIZE);
@@ -498,7 +518,7 @@ function drawMap() {
         }
     }
 
-    // Desenha o Jardim e os Plots
+    // 3. Desenha o Jardim e os Plots
     for (let i = 0; i < gameData.plots.length; i++) {
         const p = gameData.plots[i];
         
@@ -553,6 +573,8 @@ function drawMap() {
     
     drawPlayer(gameData.player.x, gameData.player.y, gameData.player.color);
 }
+// *** FIM DA FUNÇÃO DE DESENHO CORRIGIDA ***
+
 
 function movePlayer() {
     const newX = gameData.player.x + (keysPressed['ArrowRight'] ? gameData.player.speed : 0) - (keysPressed['ArrowLeft'] ? gameData.player.speed : 0);
