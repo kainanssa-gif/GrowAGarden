@@ -1,212 +1,194 @@
+/* --- Estilos Gerais e Reset --- */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f0f0f0;
+    min-height: 100vh;
+    overflow: hidden; /* Evita barras de rolagem desnecessárias */
 }
 
+/* --- Container Principal do Jogo --- */
 #gameContainer {
-    border: 3px solid #333;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column; /* Organiza o HUD em cima e o canvas/inventário embaixo */
+    background-color: #8fbc8f; /* Cor de fundo para o jardim */
+    border: 5px solid #4a2b2b;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     padding: 10px;
+    max-width: 90vw;
+    max-height: 90vh;
+    box-sizing: border-box;
+}
+
+/* --- HUD Superior (Dinheiro, Pet, Mensagens) --- */
+#hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+#messageBox {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 8px;
+    border-radius: 5px;
+    position: absolute; /* Aparece por cima de tudo */
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    font-weight: bold;
+    min-width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+.show {
+    opacity: 1 !important;
+}
+.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.event {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* --- Área Principal: Canvas e Inventário Lateral --- */
+#mainArea {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- Canvas do Jogo --- */
+#gardenCanvas {
+    /* O Canvas DEVE ter dimensões explícitas. 
+       Assumindo que o INITIAL_GARDEN_WIDTH é 4 e TILE_SIZE é 64, o Canvas começa em 256x256. 
+       Mas vamos deixá-lo redimensionável dentro de seu container. */
+    border: 2px solid #333;
+    background-color: #2e8b57; /* Fundo visível para debug */
+    display: block;
+    cursor: url('./assets/cursor_default.png'), auto; /* Cursor customizado */
+    image-rendering: pixelated; /* Garante que o pixel art fique nítido */
+}
+/* No CSS, o tamanho real é controlado pelas dimensões do elemento no HTML/JS. 
+   Deixamos o container #mainArea gerenciar o layout. */
+
+
+/* --- Painel de Inventário e Ações (à direita do Canvas) --- */
+#inventoryPanel {
+    width: 250px;
+    background-color: #f7f7e7;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    position: relative; /* Importante para o joystick */
+    gap: 15px;
+    overflow-y: auto; /* Permite rolar se houver muitos itens */
 }
 
-#header {
-    width: 400px;
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    border-bottom: 1px solid #ccc;
-}
-
-#gardenCanvas {
-    display: block;
-    border: 1px solid #000;
-}
-
-#controls {
-    width: 400px;
-    padding: 10px 0;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
-    border-top: 1px solid #ccc;
-    margin-top: 5px;
-}
-
-#controls button {
-    padding: 8px 12px;
-    border: none;
-    background-color: #4682b4;
-    color: white;
-    cursor: pointer;
-    border-radius: 5px;
-    font-weight: bold;
-    flex-grow: 1; 
-    min-width: 80px;
-    transition: background-color 0.1s;
-}
-
-#controls button:hover {
-    background-color: #3a6a97;
-}
-
-#sceneChanger {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 15px;
-    background-color: #ff5722;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-/* MODAL STYLES */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 10; 
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 10% auto; 
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%; 
-    max-width: 500px;
-    border-radius: 10px;
-    position: relative;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close-button:hover,
-.close-button:focus {
-    color: #000;
-    text-decoration: none;
-}
-
-.modal-scroll-content {
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 15px;
-    margin-bottom: 10px;
-    border: 1px solid #eee;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-/* Shop Item Styling */
-.shop-item {
+.inventory-section {
     border-bottom: 1px dashed #ccc;
-    padding: 10px 0;
+    padding-bottom: 10px;
+}
+
+.inventory-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px dotted #ddd;
 }
 
-.shop-item h4 {
+.inventory-item h4 {
     margin: 0;
-    font-size: 16px;
-    color: #333;
+    font-size: 0.9em;
 }
 
-.shop-item p {
-    margin: 2px 0;
-    font-size: 12px;
-    color: #555;
-}
-
-.shop-item button {
-    padding: 5px 10px;
+.inventory-item button {
+    background-color: #ff9800;
+    color: white;
     border: none;
-    background-color: #008cba;
-    color: white;
-    cursor: pointer;
+    padding: 3px 8px;
     border-radius: 3px;
-}
-
-/* Estilos de Ferramentas */
-#inventoryTools {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 10px;
-    width: 100%;
-}
-
-.tool-button {
-    padding: 5px 10px;
-    background-color: #8fbc8f; /* Cor do jardim */
-    border: 2px solid #556b2f;
     cursor: pointer;
-    color: white;
-    font-weight: bold;
-    border-radius: 5px;
-    flex-grow: 1;
+    font-size: 0.8em;
 }
 
-/* Estilo para a ferramenta selecionada */
-.tool-button.selected {
-    background-color: #ffd700; /* Dourado */
-    color: black;
-    border-color: #ff8c00;
-}
-
-/* --- ESTILOS DO JOYSTICK (CORRIGIDO PARA DISPLAY: BLOCK) --- */
-#joystick-container {
-    position: absolute;
-    bottom: 30px; /* Posicionado no canto inferior esquerdo, fora do canvas */
-    left: 20px;
-    width: 150px;
-    height: 150px;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    /* CORREÇÃO: Mostra o container */
-    display: block; 
-    z-index: 5;
-    /* Adicionado transform e position:absolute ao gameContainer para referência */
-}
-
-#joystick {
+/* --- Shop Panel (Sobreposição) --- */
+#shopPanel {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 50px;
-    height: 50px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 2px solid #333;
-    border-radius: 50%;
+    width: 600px;
+    max-height: 80vh;
+    background-color: #fff;
+    border: 3px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 50; /* Garante que o shop esteja acima do canvas */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    display: none; /* Inicialmente invisível */
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+#shopPanel h2 {
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.shop-item button {
+    background-color: #008cba;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
     cursor: pointer;
-    touch-action: none; /* Previne que o tablet faça zoom ou scroll */
+}
+
+#closeShopButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #333;
+}
+
+/* --- Estilos do Pet (Incubadora) --- */
+#eggInventoryDisplay .egg-incubating {
+    padding: 5px;
+    background-color: #e0f7fa;
+    border-radius: 5px;
+    font-style: italic;
 }
